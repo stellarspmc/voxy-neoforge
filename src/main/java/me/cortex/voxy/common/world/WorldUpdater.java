@@ -51,15 +51,7 @@ public class WorldUpdater {
                 // which can decide wether to dispatch mesh rebuilds to the surounding sections
                 //Bitmask of neighboring sections
                 //Note, this may be zero (this is more likely to occure at higher lod levels) if it doesnt face any neighbors
-                int neighbors = 0;
-                if (didStateChange) {
-                    neighbors |= ((section.y^(section.y-1))>>(lvl+1))==0?0:1<<0;//Down
-                    neighbors |= ((section.y^(section.y+1))>>(lvl+1))==0?0:1<<1;//Up
-                    neighbors |= ((section.x^(section.x-1))>>(lvl+1))==0?0:1<<2;//-x
-                    neighbors |= ((section.x^(section.x+1))>>(lvl+1))==0?0:1<<3;//+x
-                    neighbors |= ((section.z^(section.z-1))>>(lvl+1))==0?0:1<<4;//-z
-                    neighbors |= ((section.z^(section.z+1))>>(lvl+1))==0?0:1<<5;//+z
-                }
+                int neighbors = getNeighbors(section, didStateChange, lvl);
 
                 into.markDirty(worldSection, (didStateChange?UPDATE_TYPE_BLOCK_BIT:0)|(emptinessStateChange!=0?UPDATE_TYPE_CHILD_EXISTENCE_BIT:0), neighbors);
             }
@@ -74,7 +66,6 @@ public class WorldUpdater {
                 } else {
                     //Propagate up without state change
                     shouldCheckEmptiness = false;
-                    previousSection = null;
                     worldSection.release();
                 }
             } else {
@@ -87,6 +78,19 @@ public class WorldUpdater {
         if (previousSection != null) {
             previousSection.release();
         }
+    }
+
+    private static int getNeighbors(VoxelizedSection section, boolean didStateChange, int lvl) {
+        int neighbors = 0;
+        if (didStateChange) {
+            neighbors |= ((section.y^(section.y-1))>>(lvl +1))==0?0: 1;//Down
+            neighbors |= ((section.y^(section.y+1))>>(lvl +1))==0?0:1<<1;//Up
+            neighbors |= ((section.x^(section.x-1))>>(lvl +1))==0?0:1<<2;//-x
+            neighbors |= ((section.x^(section.x+1))>>(lvl +1))==0?0:1<<3;//+x
+            neighbors |= ((section.z^(section.z-1))>>(lvl +1))==0?0:1<<4;//-z
+            neighbors |= ((section.z^(section.z+1))>>(lvl +1))==0?0:1<<5;//+z
+        }
+        return neighbors;
     }
 
 
@@ -122,12 +126,12 @@ public class WorldUpdater {
                     int cSecIdx = secIdx + baseSec;
                     secIdx = (secIdx + iSecMsk1) & secMsk;
 
-                    long oldId0 = secD[cSecIdx+0]; secD[cSecIdx+0] = vdat[i+0];
+                    long oldId0 = secD[cSecIdx]; secD[cSecIdx] = vdat[i];
                     long oldId1 = secD[cSecIdx+1]; secD[cSecIdx+1] = vdat[i+1];
                     long oldId2 = secD[cSecIdx+2]; secD[cSecIdx+2] = vdat[i+2];
                     long oldId3 = secD[cSecIdx+3]; secD[cSecIdx+3] = vdat[i+3];
 
-                    airCount += Mapper.isAir(oldId0)?1:0; didStateChange |= vdat[i+0] != oldId0;
+                    airCount += Mapper.isAir(oldId0)?1:0; didStateChange |= vdat[i] != oldId0;
                     airCount += Mapper.isAir(oldId1)?1:0; didStateChange |= vdat[i+1] != oldId1;
                     airCount += Mapper.isAir(oldId2)?1:0; didStateChange |= vdat[i+2] != oldId2;
                     airCount += Mapper.isAir(oldId3)?1:0; didStateChange |= vdat[i+3] != oldId3;

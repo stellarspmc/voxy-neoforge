@@ -51,7 +51,7 @@ public class ActiveSectionTracker {
     }
 
     @SuppressWarnings("unchecked")
-    public ActiveSectionTracker(int numSlicesBits, SectionLoader loader, int cacheSize, WorldEngine engine) {
+    public ActiveSectionTracker(int numSlicesBits, SectionLoader loader, int cacheSize, @Nullable WorldEngine engine) {
         this.engine = engine;
 
         this.loader = loader;
@@ -75,7 +75,7 @@ public class ActiveSectionTracker {
         int index = this.getCacheArrayIndex(key);
         var cache = this.loadedSectionCache[index];
         final var lock = this.locks[index];
-        VolatileHolder<WorldSection> holder = null;
+        VolatileHolder<WorldSection> holder;
         boolean isLoader = false;
         WorldSection section = null;
 
@@ -157,8 +157,7 @@ public class ActiveSectionTracker {
                 if (status == 1) {
                     //We need to set the data to air as it is undefined state
                     int sky = 15;
-                    int block = 0;
-                    Arrays.fill(section.data, Mapper.composeMappingId((byte) (sky|(block<<4)),0,0));
+                    Arrays.fill(section.data, Mapper.composeMappingId((byte) (sky|(0)),0,0));
                 }
                 section.acquire(1);
             }
@@ -209,7 +208,7 @@ public class ActiveSectionTracker {
         if (section.shouldSave()&&this.engine!=null) {
             if (section.tryAcquire()) {
                 if (section.shouldSave()) {//If we should try enqueue
-                    if (!this.engine.saveSection(section, true, true)) {
+                    if (this.engine.invertSaveSection(section, true, true)) {
                         //we didnt enqueue the section in the save queue so we must unload it manually
                         section.release(false, hints);
                     }
@@ -232,7 +231,7 @@ public class ActiveSectionTracker {
             VarHandle.loadLoadFence();
             if (this.engine != null && section.shouldSave()) {//Last call for saving
                 if (section.tryAcquire()) {
-                    if (!this.engine.saveSection(section, true, true)) {//not allowed to block as we are in a lock
+                    if (this.engine.invertSaveSection(section, true, true)) {//not allowed to block as we are in a lock
                         //We didnt enqueue the save here, so we must unload
                         // but unload in a recursive
                         VarHandle.fullFence();
@@ -325,7 +324,7 @@ public class ActiveSectionTracker {
 
     public static void main(String[] args) throws InterruptedException {
         var tracker = new ActiveSectionTracker(6, a->0, 2<<10);
-        var bean = tracker.acquire(0, 0, 0, 9, false);
+        tracker.acquire(0, 0, 0, 9, false);
         var bean2 = tracker.acquire(1, 0, 0, 0, false);
         System.out.println("Target obj:" + System.identityHashCode(bean2));
         bean2.release();

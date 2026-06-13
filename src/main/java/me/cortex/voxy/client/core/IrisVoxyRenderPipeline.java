@@ -201,7 +201,7 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
 
     private static final int UNIFORM_BINDING_POINT = 7;//TODO make ths binding point... not randomly 5
 
-    private StringBuilder buildGenericShaderHeader(AbstractSectionRenderer<?, ?> renderer, String input) {
+    private StringBuilder buildGenericShaderHeader(String input) {
         StringBuilder builder = new StringBuilder(input).append("\n\n\n");
 
         if (this.data.getUniforms() != null) {
@@ -227,7 +227,7 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
 
     @Override
     public String patchOpaqueShader(AbstractSectionRenderer<?, ?> renderer, String input) {
-        var builder = this.buildGenericShaderHeader(renderer, input);
+        var builder = this.buildGenericShaderHeader(input);
 
         builder.append(this.data.opaqueFragPatch());
 
@@ -238,7 +238,7 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
     public String patchTranslucentShader(AbstractSectionRenderer<?, ?> renderer, String input) {
         if (this.data.translucentFragPatch() == null) return null;
 
-        var builder = this.buildGenericShaderHeader(renderer, input);
+        var builder = this.buildGenericShaderHeader(input);
         builder.append(this.data.translucentFragPatch());
         return builder.toString();
     }

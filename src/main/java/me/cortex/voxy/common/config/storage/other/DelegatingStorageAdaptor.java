@@ -5,7 +5,6 @@ import me.cortex.voxy.common.config.storage.StorageBackend;
 import me.cortex.voxy.common.util.MemoryBuffer;
 
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.function.LongConsumer;
 
 public class DelegatingStorageAdaptor extends StorageBackend {
@@ -50,10 +49,5 @@ public class DelegatingStorageAdaptor extends StorageBackend {
     @Override
     public void close() {
         this.delegate.close();
-    }
-
-    @Override
-    public List<StorageBackend> getChildBackends() {
-        return List.of(this.delegate);
     }
 }

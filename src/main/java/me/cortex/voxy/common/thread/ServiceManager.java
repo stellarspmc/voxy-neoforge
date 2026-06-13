@@ -35,10 +35,6 @@ public class ServiceManager {
     }
 
 
-    public Service createServiceNoCleanup(Supplier<Runnable> ctxFactory, long weight) {
-        return this.createService(()->new Pair<>(ctxFactory.get(), ()->{}), weight, "");
-    }
-
     public Service createServiceNoCleanup(Supplier<Runnable> ctxFactory, long weight, String name) {
         return this.createService(()->new Pair<>(ctxFactory.get(), ()->{}), weight, name);
     }
@@ -152,9 +148,9 @@ public class ServiceManager {
         var services = this.services;
         var newServices = new Service[services.length-1];
         int j = 0;
-        for (int i = 0; i < services.length; i++) {
-            if (services[i] != service) {
-                newServices[j++] = services[i];
+        for (Service value : services) {
+            if (value != service) {
+                newServices[j++] = value;
             }
         }
         if (j != newServices.length) {
@@ -164,7 +160,7 @@ public class ServiceManager {
         this.services = newServices;
     }
 
-    void execute(Service service) {
+    void execute() {
         this.totalJobs.incrementAndGet();
         this.jobRelease.accept(1);
     }

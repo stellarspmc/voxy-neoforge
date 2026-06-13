@@ -103,12 +103,9 @@ public class RenderResourceReuse {
 
             geometryCapacity = Math.min(geometryCapacity, limit);
         }
-        //geometryCapacity = 1<<28;
-        //geometryCapacity = 1<<30;//1GB test
+
         var override = System.getProperty("voxy.geometryBufferSizeOverrideMB", "");
-        if (!override.isEmpty()) {
-            geometryCapacity = Long.parseLong(override)*1024L*1024L;
-        }
+        if (!override.isEmpty()) geometryCapacity = Long.parseLong(override)*1024L*1024L;
         return geometryCapacity;
     }
 }

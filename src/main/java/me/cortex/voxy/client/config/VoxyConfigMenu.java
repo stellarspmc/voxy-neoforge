@@ -18,11 +18,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+@SuppressWarnings("unused")
 @ConfigEntryPointForge("voxy")
 public class VoxyConfigMenu implements ConfigEntryPoint {
     @Override
     public void registerConfigLate(ConfigBuilder B) {
-        if (!VoxyCommon.isAvailable()) return;//Dont even register the config if its not avalible
+        if (!VoxyCommon.isAvailable()) return; // Don't even register the config if it's not available
 
         var CFG = VoxyConfig.CONFIG;
 
@@ -37,7 +38,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                         if (instance != null) {
                             instance.updateDedicatedThreads();
                         }
-                    }, "voxy:enabled").register("voxy:iris_reload", ()->IrisUtil.reload());
+                    }, "voxy:enabled").register("voxy:iris_reload", IrisUtil::reload);
                 },
                 new Page(Component.translatable("voxy.config.general"),
                         new Group(
@@ -54,9 +55,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                         .setPostChangeRunner(c->{
                                             if (!c) {
                                                 var vrsh = (IGetVoxyRenderSystem) Minecraft.getInstance().levelRenderer;
-                                                if (vrsh != null) {
-                                                    vrsh.voxy$shutdownRenderer();
-                                                }
+                                                if (vrsh != null) vrsh.voxy$shutdownRenderer();
                                                 VoxyCommon.shutdownInstance();
                                             }
                                         }).setPostChangeFlags(RENDER_RELOAD, "voxy:iris_reload").setEnabler(null)
@@ -88,11 +87,8 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                         .setPostChangeRunner(c->{
                                             var vrsh = (IGetVoxyRenderSystem)Minecraft.getInstance().levelRenderer;
                                             if (vrsh != null) {
-                                                if (c) {
-                                                    vrsh.voxy$createRenderer();
-                                                } else {
-                                                    vrsh.voxy$shutdownRenderer();
-                                                }
+                                                if (c) vrsh.voxy$createRenderer();
+                                                else vrsh.voxy$shutdownRenderer();
                                             }
                                         },"voxy:enabled", RENDER_RELOAD)
                                         .setPostChangeFlags("voxy:iris_reload")
@@ -117,10 +113,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                             var vrsh = (IGetVoxyRenderSystem)Minecraft.getInstance().levelRenderer;
                                             if (vrsh != null) {
                                                 var vrs = vrsh.voxy$getRenderSystem();
-                                                if (vrs != null) {
-                                                    //CFG.sectionRenderDistance == c/16
-                                                    vrs.setRenderDistance(CFG.sectionRenderDistance);
-                                                }
+                                                if (vrs != null) vrs.setRenderDistance(CFG.sectionRenderDistance);
                                             }
                                         }, "voxy:rendering", RENDER_RELOAD)
                                         .setImpact(OptionImpact.MEDIUM)
@@ -134,7 +127,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                 new EnumOption<>("voxy:ssao_mode",
                                         SSAO.SSAOMode.class,
                                         Component.translatable("voxy.config.general.ssao_mode"),
-                                        ()->CFG.getSSAOMode(), v->CFG.setSSAOMode(v))
+                                        CFG::getSSAOMode, CFG::setSSAOMode)
                                         .setImpact(OptionImpact.MEDIUM)//TODO make it on igpus this is high
                                         .setPostChangeFlags(RENDER_RELOAD)
                         ), new Group(
@@ -154,14 +147,14 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                 new IntOption(
                                         "voxy:fog_intensity",
                                         Component.translatable("voxy.config.general.fogIntensity"),
-                                        ()->Math.round(CFG.fogIntensity * 100), v->CFG.fogIntensity=v / 100,
+                                        ()->Math.round(CFG.fogIntensity * 100), v->CFG.fogIntensity= (float) v / 100,
                                         new Range(0, 100, 1))
                                         .setImpact(OptionImpact.LOW)
                                         .setPostChangeFlags(RENDER_RELOAD),
                                 new IntOption(
                                         "voxy:fog_density",
                                         Component.translatable("voxy.config.general.fogDensity"),
-                                        ()->Math.round(CFG.fogDensity * 100), v->CFG.fogDensity=v / 100,
+                                        ()->Math.round(CFG.fogDensity * 100), v->CFG.fogDensity= (float) v / 100,
                                         new Range(0, 100, 1))
                                         .setImpact(OptionImpact.LOW)
                                         .setPostChangeFlags(RENDER_RELOAD),

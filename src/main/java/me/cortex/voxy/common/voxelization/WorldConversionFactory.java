@@ -8,13 +8,7 @@ import net.minecraft.util.SimpleBitStorage;
 import net.minecraft.util.ZeroBitStorage;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.GlobalPalette;
-import net.minecraft.world.level.chunk.HashMapPalette;
-import net.minecraft.world.level.chunk.LinearPalette;
-import net.minecraft.world.level.chunk.Palette;
-import net.minecraft.world.level.chunk.PalettedContainer;
-import net.minecraft.world.level.chunk.PalettedContainerRO;
-import net.minecraft.world.level.chunk.SingleValuePalette;
+import net.minecraft.world.level.chunk.*;
 import net.neoforged.fml.ModList;
 
 import java.util.WeakHashMap;

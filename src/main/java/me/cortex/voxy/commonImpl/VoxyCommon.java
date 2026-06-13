@@ -2,7 +2,6 @@ package me.cortex.voxy.commonImpl;
 
 import me.cortex.voxy.common.config.Serialization;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
@@ -13,7 +12,7 @@ public class VoxyCommon {
     public static boolean IS_DEDICATED_SERVER = false;
     public static boolean IS_IN_MINECRAFT = false;
 
-    public VoxyCommon(ModContainer container, IEventBus modBus) {
+    public VoxyCommon(ModContainer container) {
         IS_IN_MINECRAFT = true;
 
         String version = container.getModInfo().getVersion().toString();
@@ -23,7 +22,6 @@ public class VoxyCommon {
         IS_DEDICATED_SERVER = FMLEnvironment.dist == Dist.DEDICATED_SERVER;
 
         Serialization.init();
-        // modBus.addListener(this::commonSetup);
     }
 
     //This is hardcoded like this because people do not understand what they are doing
@@ -59,10 +57,7 @@ public class VoxyCommon {
     }
 
     public static void createInstance() {
-        if (FACTORY == null) {
-            //Logger.info("Voxy factory");
-            return;
-        }
+        if (FACTORY == null) return;
         if (INSTANCE != null) throw new IllegalStateException("Cannot create multiple instances");
         INSTANCE = FACTORY.create();
     }

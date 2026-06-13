@@ -21,7 +21,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Level.class)
 public class MixinWorld implements IWorldGetIdentifier {
     @Unique
-    private WorldIdentifier identifier;
+    private WorldIdentifier voxy$identifier;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void voxy$injectIdentifier(WritableLevelData properties,
@@ -34,15 +34,14 @@ public class MixinWorld implements IWorldGetIdentifier {
                                        long seed,
                                        int maxChainedNeighborUpdates,
                                        CallbackInfo ci) {
-        if (key != null) {
-            this.identifier = new WorldIdentifier(key, seed, dimensionEntry == null?null:dimensionEntry.unwrapKey().orElse(null));
-        } else {
-            this.identifier = null;
-        }
+        if (key != null)
+            this.voxy$identifier = new WorldIdentifier(key, seed, dimensionEntry == null?null:dimensionEntry.unwrapKey().orElse(null));
+        else this.voxy$identifier = null;
+
     }
 
     @Override
     public WorldIdentifier voxy$getIdentifier() {
-        return this.identifier;
+        return this.voxy$identifier;
     }
 }

@@ -27,7 +27,7 @@ import static org.lwjgl.opengl.GL45C.glBindTextureUnit;
 import static org.lwjgl.opengl.GL45C.glCreateSamplers;
 
 public class SSAO {
-    public static enum SSAOMode {
+    public enum SSAOMode {
         AUTO,
         BASIC,
         BETTER,
@@ -40,8 +40,8 @@ public class SSAO {
         else if (mode == SSAOMode.BEST) return new SSAO(properties, true, 24);
         else if (mode == SSAOMode.AUTO) {
             if (Capabilities.INSTANCE.canQueryGpuMemory) {
-                if (Capabilities.INSTANCE.totalDedicatedMemory < 2_500_000_000L) return createSSAO(properties, SSAOMode.BASIC);//Create a basic instance (cant query memory (probably intel igpu or less then 2.5gb vram)
-                else if (Capabilities.INSTANCE.totalDedicatedMemory < 7_000_000_000L) return createSSAO(properties, SSAOMode.BETTER);//Less then 7gb of dedicated vram create a better instance (mid range dgpus (they can probably do best just fine but just in case)
+                if (Capabilities.INSTANCE.totalDedicatedMemory < 2_500_000_000L) return createSSAO(properties, SSAOMode.BASIC);//Create a basic instance (cant query memory (probably intel igpu or less than 2.5gb vram)
+                else if (Capabilities.INSTANCE.totalDedicatedMemory < 7_000_000_000L) return createSSAO(properties, SSAOMode.BETTER);//Less than 7gb of dedicated vram create a better instance (mid-range dgpus (they can probably do best just fine but just in case)
                 else return createSSAO(properties, SSAOMode.BEST);//create the best ssao
             } else {
                 if (Capabilities.INSTANCE.isAmd) return createSSAO(properties, SSAOMode.BETTER);
@@ -75,7 +75,7 @@ public class SSAO {
                     .defineIf("SSAO_STEPS", samples!=0, samples)
                     .defineIf("USE_GENERATED_SAMPLE_POINTS", useConstArray);
 
-            if (useConstArray) builder.replace("%%CONST_ARRAY%%", getArray(samples));
+            builder.replace("%%CONST_ARRAY%%", getArray(samples));
         }
 
         this.ssaoCompute = builder.compile();

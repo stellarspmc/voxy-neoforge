@@ -21,43 +21,18 @@ public class AllocationArena {
     private long sizeLimit = Long.MAX_VALUE;
     private long totalSize;
     //Flags
-    private boolean resized;//If the required memory of the entire buffer grew
+    //If the required memory of the entire buffer grew
 
     public void reset() {
         this.FREE.clear();
         this.TAKEN.clear();
         this.sizeLimit = Long.MAX_VALUE;
         this.totalSize = 0;
-        this.resized = false;
-    }
-
-    //Gets and resets the resized flag
-    public boolean getResetResized() {
-        boolean ret = this.resized;
-        this.resized = false;
-        return ret;
     }
 
     public long getSize() {
         return this.totalSize;
     }
-
-
-    public int numFreeBlocks() {
-        return this.FREE.size();
-    }
-
-    public int getLargestFreeBlockSize(int index) {
-        var iter = this.FREE.tailSet(-1).iterator();
-        for (;index>0&&iter.hasPrevious();index--){iter.previousLong();}
-        long slot = iter.previousLong();
-        return (int) (slot>>ADDR_BITS);
-    }
-
-    /*
-    public long allocFromLargest(int size) {//Allocates from the largest avalible block, this is useful for expanding later on
-
-    }*/
 
     public long alloc(int size) {//TODO: add alignment support
         if (size == 0) throw new IllegalArgumentException();
@@ -65,7 +40,6 @@ public class AllocationArena {
         var iter = this.FREE.iterator(((long) size << ADDR_BITS)-1);
         if (!iter.hasNext()) {//No free space for allocation
             //Create new allocation
-            this.resized = true;
             long addr = this.totalSize;
             if (this.totalSize+size>this.sizeLimit) {
                 return SIZE_LIMIT;
@@ -129,7 +103,6 @@ public class AllocationArena {
             }
         }// if there is no next block it means that we have reached the end of the allocation sections and we can shrink the buffer
         else {
-            this.resized = true;
             this.totalSize -= (slot&SIZE_MSK);
             return (int) size;
         }
@@ -144,11 +117,11 @@ public class AllocationArena {
 
 
     //Attempts to expand an allocation, returns true on success
-    public boolean expand(long addr, int extra) {
+    public boolean invertExpand(long addr, int extra) {
         addr &= ADDR_MSK;//encase addr stores shit in its upper bits
         var iter = this.TAKEN.iterator(addr<<SIZE_BITS);
         if (!iter.hasNext()) {
-            return false;
+            return true;
         }
         long slot = iter.nextLong();
         if (slot>>SIZE_BITS != addr) {
@@ -170,41 +143,28 @@ public class AllocationArena {
                     this.FREE.add(((delta-extra)<<ADDR_BITS)|(endAddr+extra));
                 }
                 //else There is exactly enough free space, so removing the free block and updating the allocation is enough
-                return true;
+                return false;
             } else {
-                return false;//Not enough room to expand
+                return true;//Not enough room to expand
             }
         } else {//We are at the end of the buffer, we can expand as we like
             if (this.totalSize+extra>this.sizeLimit)//If expanding and we would exceed the size limit, dont resize
-                return false;
+                return true;
             iter.remove();
             this.TAKEN.add(updatedSlot);
             this.totalSize += extra;
             //this.resized = true;
-            return true;
+            return false;
         }
     }
 
-    public long getSize(long addr) {
-        addr &= ADDR_MSK;
-        var iter = this.TAKEN.iterator(addr << SIZE_BITS);
-        if (!iter.hasNext())
-            throw new IllegalArgumentException();
-        long slot = iter.nextLong();
-        if (slot>>SIZE_BITS != addr) {
-            throw new IllegalStateException();
-        }
-        return slot&SIZE_MSK;
-    }
-    
     public void setLimit(long size) {
         this.sizeLimit = size;
-        if (this.sizeLimit < this.totalSize) {
-            throw new IllegalStateException("Size set smaller than current size");
-        }
+        if (this.sizeLimit < this.totalSize) throw new IllegalStateException("Size set smaller than current size");
     }
 
     public long getLimit() {
         return this.sizeLimit;
     }
+
 }

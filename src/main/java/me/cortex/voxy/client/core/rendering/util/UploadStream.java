@@ -76,7 +76,7 @@ public class UploadStream {
         }
 
         long addr;
-        if (this.caddr == -1 || !this.allocationArena.expand(this.caddr, (int) size)) {
+        if (this.caddr == -1 || this.allocationArena.invertExpand(this.caddr, (int) size)) {
             if ((!USE_COHERENT)&&this.caddr!=-1) {
                 glFlushMappedNamedBufferRange(this.uploadBuffer.id, this.caddr, this.offset);
             }

@@ -20,7 +20,7 @@ public class IrisUtil {
 
     public static CapturedViewportParameters CAPTURED_VIEWPORT_PARAMETERS;
 
-    public static final boolean IRIS_INSTALLED = ModList.get().isLoaded("iris");;
+    public static final boolean IRIS_INSTALLED = ModList.get().isLoaded("iris");
     public static final boolean SHADER_SUPPORT = true;//System.getProperty("voxy.enableExperimentalIrisPipeline", "false").equalsIgnoreCase("true");
 
 
@@ -63,7 +63,7 @@ public class IrisUtil {
         return IRIS_INSTALLED && irisShaderPackEnabled0();
     }
     private static boolean irisShadersEnabledInConfig0() {
-        return !Iris.getCurrentPack().isEmpty();
+        return Iris.getCurrentPack().isPresent();
     }
     public static boolean irisShadersEnabledInConfig() {
         return IRIS_INSTALLED && irisShadersEnabledInConfig0();

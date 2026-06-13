@@ -4,9 +4,6 @@ import me.cortex.voxy.common.config.IMappingStorage;
 import me.cortex.voxy.common.config.IStoredSectionPositionIterator;
 import me.cortex.voxy.common.util.MemoryBuffer;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public abstract class StorageBackend implements IMappingStorage, IStoredSectionPositionIterator {
 
     //Implementation may use the scratch buffer as the return value, it MUST NOT free the scratch buffer
@@ -20,16 +17,4 @@ public abstract class StorageBackend implements IMappingStorage, IStoredSectionP
 
     public abstract void close();
 
-    public List<StorageBackend> getChildBackends() {
-        return List.of();
-    }
-
-    public final List<StorageBackend> collectAllBackends() {
-        List<StorageBackend> backends = new ArrayList<>();
-        backends.add(this);
-        for (var child : this.getChildBackends()) {
-            backends.addAll(child.collectAllBackends());
-        }
-        return backends;
-    }
 }

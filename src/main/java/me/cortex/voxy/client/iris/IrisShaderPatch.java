@@ -7,8 +7,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
 import me.cortex.voxy.common.Logger;
-import net.irisshaders.iris.shaderpack.ShaderPack;
 import net.irisshaders.iris.shaderpack.include.AbsolutePackPath;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.opengl.ARBDrawBuffersBlend;
 
 import java.io.IOException;
@@ -17,14 +17,14 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL33.*;
 
 public class IrisShaderPatch {
-    public static final int VERSION = ((IntSupplier)()->1).getAsInt();
+    public static final int VERSION = 1;
     public static final int SHADER_DEFINE_VERSION = 2;
 
 
@@ -142,7 +142,6 @@ public class IrisShaderPatch {
                             }
                         } else {
                             Logger.error("Unknown blend state "+val);
-                            state = null;
                         }
                         if (bs != null) {
                             int[] v = bs.stream().mapToInt(BlendStateDeserializer::parseType).toArray();
@@ -212,17 +211,11 @@ public class IrisShaderPatch {
 
 
     private final PatchGson patchData;
-    private final ShaderPack pack;
     private final Int2ObjectMap<String> ssbos;
-    private IrisShaderPatch(PatchGson patchData, ShaderPack pack) {
+    private IrisShaderPatch(PatchGson patchData) {
         this.patchData = patchData;
-        this.pack = pack;
 
-        if (patchData.ssbos == null) {
-            this.ssbos = new Int2ObjectOpenHashMap<>();
-        } else {
-            this.ssbos = patchData.ssbos;
-        }
+        this.ssbos = Objects.requireNonNullElseGet(patchData.ssbos, Int2ObjectOpenHashMap::new);
     }
 
     public boolean useViewportDims() {
@@ -311,7 +304,7 @@ public class IrisShaderPatch {
             .setLenient()
             .create();
 
-    public static IrisShaderPatch makePatch(ShaderPack ipack, AbsolutePackPath directory, Function<AbsolutePackPath, String> sourceProvider) {
+    public static IrisShaderPatch makePatch(AbsolutePackPath directory, Function<AbsolutePackPath, String> sourceProvider) {
         String voxyPatchData = sourceProvider.apply(directory.resolve("voxy.json"));
         if (voxyPatchData == null) {//No voxy patch data in shaderpack
             return null;
@@ -325,27 +318,16 @@ public class IrisShaderPatch {
         //Escape things
         voxyPatchData = voxyPatchData.replace("\\", "\\\\");
 
-        PatchGson patchData = null;
+        PatchGson patchData;
         try {
             //TODO: basicly find any "commented out" quotation marks and escape them (if the line, when stripped starts with a // or /* then escape all quotation marks in that line)
             {
-                StringBuilder builder = new StringBuilder(voxyPatchData.length());
-                //Rebuild the patch, replacing commented out " with \"
-                for (var line : voxyPatchData.split("\n")) {
-                    int idx = line.indexOf("//");
-                    if (idx != -1) {
-                        builder.append(line, 0, idx);
-                        builder.append(line.substring(idx).replace("\"","\\\""));
-                    } else {
-                        builder.append(line);
-                    }
-                    builder.append("\n");
-                }
+                StringBuilder builder = getStringBuilder(voxyPatchData);
                 voxyPatchData = builder.toString();
             }
 
             //Stupid chunk fade in patch (should probably just breaks
-            voxyPatchData = voxyPatchData.replaceAll("void _cfi_ignoreMarker\\(\\) \\{\\}", "");
+            voxyPatchData = voxyPatchData.replaceAll("void _cfi_ignoreMarker\\(\\) \\{}", "");
 
             patchData = GSON.fromJson(voxyPatchData, PatchGson.class);
             if (patchData == null) {
@@ -376,7 +358,6 @@ public class IrisShaderPatch {
                 throw new IllegalStateException("voxy json patch not valid: " + invalidPatchDataReason);
             }
         } catch (Exception e) {
-            patchData = null;
             Logger.error("Failed to parse patch data gson, dumping json",e);
             try {
                 Files.writeString(Path.of("JSON_DUMP.txt"), voxyPatchData);
@@ -392,6 +373,22 @@ public class IrisShaderPatch {
             Logger.error("Shader has voxy patch data, but patch version is incorrect. expected " + VERSION + " got "+patchData.version);
             throw new IllegalStateException("Shader version mismatch expected " + VERSION + " got "+patchData.version);
         }
-        return new IrisShaderPatch(patchData, ipack);
+        return new IrisShaderPatch(patchData);
+    }
+
+    private static @NotNull StringBuilder getStringBuilder(String voxyPatchData) {
+        StringBuilder builder = new StringBuilder(voxyPatchData.length());
+        //Rebuild the patch, replacing commented out " with \"
+        for (var line : voxyPatchData.split("\n")) {
+            int idx = line.indexOf("//");
+            if (idx != -1) {
+                builder.append(line, 0, idx);
+                builder.append(line.substring(idx).replace("\"","\\\""));
+            } else {
+                builder.append(line);
+            }
+            builder.append("\n");
+        }
+        return builder;
     }
 }

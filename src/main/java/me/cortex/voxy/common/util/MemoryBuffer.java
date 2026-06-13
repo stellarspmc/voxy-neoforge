@@ -30,12 +30,8 @@ public class MemoryBuffer extends TrackedObject {
         this.address = address;
         this.freeable = freeable;
 
-        if (track) {
-            COUNT.incrementAndGet();
-        }
-        if (freeable) {
-            TOTAL_SIZE.addAndGet(size);
-        }
+        if (track) COUNT.incrementAndGet();
+        if (freeable) TOTAL_SIZE.addAndGet(size);
     }
 
     public void cpyTo(long dst) {
@@ -52,15 +48,11 @@ public class MemoryBuffer extends TrackedObject {
     @Override
     public void free() {
         super.free0();
-        if (this.tracked) {
-            COUNT.decrementAndGet();
-        }
+        if (this.tracked) COUNT.decrementAndGet();
         if (this.freeable) {
             MemoryUtil.nmemFree(this.address);
             TOTAL_SIZE.addAndGet(-this.size);
-        } else {
-            throw new IllegalArgumentException("Tried to free unfreeable buffer");
-        }
+        } else throw new IllegalArgumentException("Tried to free unfreeable buffer");
     }
 
     public MemoryBuffer copy() {
@@ -71,19 +63,14 @@ public class MemoryBuffer extends TrackedObject {
 
     //Creates a new MemoryBuffer, defunking this buffer and sets the size to be a subsize of the current size
     public MemoryBuffer subSize(long size) {
-        if (size > this.size || size <= 0) {
+        if (size > this.size || size <= 0)
             throw new IllegalArgumentException("Requested size larger than current size, or less than 0, requested: "+size+" capacity: " + this.size);
-        }
+
 
         //Free the current object, but not the memory associated with it
         this.free0();
-        if (this.tracked) {
-            COUNT.decrementAndGet();
-        }
-        if (this.freeable) {
-            TOTAL_SIZE.addAndGet(-this.size);
-        }
-
+        if (this.tracked) COUNT.decrementAndGet();
+        if (this.freeable) TOTAL_SIZE.addAndGet(-this.size);
         return new MemoryBuffer(this.tracked, this.address, size, this.freeable);
     }
 
@@ -100,9 +87,6 @@ public class MemoryBuffer extends TrackedObject {
     // methods for get and set, that way can have a single unifed system to ensure memory access bounds
 
 
-    public static MemoryBuffer createUntrackedRawFrom(long address, long size) {
-        return new MemoryBuffer(false, address, size, true);
-    }
     public static MemoryBuffer createUntrackedUnfreeableRawFrom(long address, long size) {
         return new MemoryBuffer(false, address, size, false);
     }

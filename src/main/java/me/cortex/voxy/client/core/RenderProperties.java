@@ -1,10 +1,7 @@
 package me.cortex.voxy.client.core;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import me.cortex.voxy.client.core.gl.shader.Shader;
 import me.cortex.voxy.client.core.util.IrisUtil;
-import me.cortex.voxy.client.iris.IGetIrisVoxyPipelineData;
-import net.irisshaders.iris.Iris;
 
 import static org.lwjgl.opengl.GL11C.*;
 
@@ -17,10 +14,6 @@ public record RenderProperties(boolean isZero2One, boolean isReverseZ, boolean u
 
     public int closerEqualDepthCompare() {
         return this.isReverseZ?GL_GEQUAL:GL_LEQUAL;
-    }
-
-    public int closerDepthCompare() {
-        return this.isReverseZ?GL_GREATER:GL_LESS;
     }
 
     public int furtherDepthCompare() {
@@ -36,18 +29,6 @@ public record RenderProperties(boolean isZero2One, boolean isReverseZ, boolean u
     }
 
     private static boolean irisUseBlockAtlasUv() {
-        var irisPipe = Iris.getPipelineManager().getPipelineNullable();
-        if (irisPipe == null) {
-            return false;
-        }
-        if (irisPipe instanceof IGetIrisVoxyPipelineData getVoxyPipeData) {
-            var pipeData = getVoxyPipeData.voxy$getPipelineData();
-            if (pipeData == null) {
-                return false;
-            }
-            //return pipeData.useBlockAtlasUV;
-            return false;
-        }
         return false;
     }
 

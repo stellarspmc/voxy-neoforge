@@ -29,6 +29,7 @@ import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.storage.RegionFileVersion;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.DataInputStream;
@@ -40,6 +41,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -47,45 +49,10 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.lwjgl.system.MemoryUtil;
-
-import com.mojang.serialization.Codec;
-
-import me.cortex.voxy.common.Logger;
-import me.cortex.voxy.common.thread.Service;
-import me.cortex.voxy.common.thread.ServiceManager;
-import me.cortex.voxy.common.util.MemoryBuffer;
-import me.cortex.voxy.common.util.Pair;
-import me.cortex.voxy.common.util.UnsafeUtil;
-import me.cortex.voxy.common.voxelization.VoxelizedSection;
-import me.cortex.voxy.common.voxelization.WorldConversionFactory;
-import me.cortex.voxy.common.world.WorldEngine;
-import me.cortex.voxy.common.world.WorldUpdater;
-import me.cortex.voxy.commonImpl.importers.IDataImporter.ICompletionCallback;
-import me.cortex.voxy.commonImpl.importers.IDataImporter.IUpdateCallback;
-import net.minecraft.core.Holder;
 import net.minecraft.core.IdMap;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.core.Registry;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.DataLayer;
-import net.minecraft.world.level.chunk.PalettedContainer;
-import net.minecraft.world.level.chunk.PalettedContainerRO;
-import net.minecraft.world.level.chunk.PalettedContainerRO.PackedData;
-import net.minecraft.world.level.chunk.status.ChunkStatus;
-import net.minecraft.world.level.chunk.storage.RegionFileVersion;
 
 public class WorldImporter implements IDataImporter {
     private final WorldEngine world;
@@ -103,23 +70,23 @@ public class WorldImporter implements IDataImporter {
 
     public WorldImporter(WorldEngine worldEngine, Level mcWorld, ServiceManager sm, BooleanSupplier runChecker) {
         this.world = worldEngine;
-        this.service = sm.createService(()->new Pair<>(()->this.jobQueue.poll().run(), ()->{}), 3, "World importer", runChecker);
+        this.service = sm.createService(()->new Pair<>(()-> Objects.requireNonNull(this.jobQueue.poll()).run(), ()->{}), 3, "World importer", runChecker);
 
         var biomeRegistry = mcWorld.registryAccess().registryOrThrow(Registries.BIOME);
         var defaultBiome = biomeRegistry.getHolder(Biomes.PLAINS).orElseThrow();
         this.defaultBiomeProvider = new PalettedContainerRO<>() {
             @Override
-            public Holder<Biome> get(int x, int y, int z) {
+            public @NotNull Holder<Biome> get(int x, int y, int z) {
                 return defaultBiome;
             }
 
             @Override
-            public void getAll(Consumer<Holder<Biome>> action) {
+            public void getAll(@NotNull Consumer<Holder<Biome>> action) {
 
             }
 
             @Override
-            public void write(FriendlyByteBuf buf) {
+            public void write(@NotNull FriendlyByteBuf buf) {
 
             }
 
@@ -129,28 +96,28 @@ public class WorldImporter implements IDataImporter {
             }
 
             @Override
-            public boolean maybeHas(Predicate<Holder<Biome>> predicate) {
+            public boolean maybeHas(@NotNull Predicate<Holder<Biome>> predicate) {
                 return false;
             }
 
             @Override
-            public void count(PalettedContainer.CountConsumer<Holder<Biome>> counter) {
+            public void count(PalettedContainer.@NotNull CountConsumer<Holder<Biome>> counter) {
 
             }
 
             @Override
-            public PalettedContainer<Holder<Biome>> recreate() {
+            public @NotNull PalettedContainer<Holder<Biome>> recreate() {
                 return null;
             }
 
             @Override
-            public PackedData<Holder<Biome>> pack(IdMap<Holder<Biome>> idMap, PalettedContainer.Strategy strategy) {
+            public @NotNull PackedData<Holder<Biome>> pack(@NotNull IdMap<Holder<Biome>> idMap, PalettedContainer.@NotNull Strategy strategy) {
                 return null;
             }
         };
 
         this.biomeCodec = PalettedContainer.codecRO(biomeRegistry.asHolderIdMap(), biomeRegistry.holderByNameCodec(), PalettedContainer.Strategy.SECTION_BIOMES, biomeRegistry.getHolderOrThrow(Biomes.PLAINS));
-        this.blockStateCodec = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState());;
+        this.blockStateCodec = PalettedContainer.codecRW(Block.BLOCK_STATE_REGISTRY, BlockState.CODEC, PalettedContainer.Strategy.SECTION_STATES, Blocks.AIR.defaultBlockState());
     }
 
 
@@ -315,10 +282,6 @@ public class WorldImporter implements IDataImporter {
         this.worker.setName("World importer");
     }
 
-    public boolean isBusy() {
-        return this.isRunning || this.worker != null;
-    }
-
     public boolean isRunning() {
         return this.isRunning || (this.worker != null && this.worker.isAlive());
     }
@@ -330,8 +293,8 @@ public class WorldImporter implements IDataImporter {
             Logger.error("Unknown file: " + name);
             throw new IllegalStateException();
         }
-        int rx = 0;
-        int rz = 0;
+        int rx;
+        int rz;
         try {
             rx = Integer.parseInt(sections[1]);
             rz = Integer.parseInt(sections[2]);
@@ -440,7 +403,7 @@ public class WorldImporter implements IDataImporter {
             }
 
             @Override
-            public int read(byte[] b, int off, int len) {
+            public int read(byte @NotNull [] b, int off, int len) {
                 len = Math.min(len, this.available());
                 if (len == 0) {
                     return -1;
@@ -468,12 +431,12 @@ public class WorldImporter implements IDataImporter {
 
     private void importChunkNBT(CompoundTag chunk, int regionX, int regionZ) {
         if (!chunk.contains("Status")) {
-            //Its not real so decrement the chunk
+            //It's not real so decrement the chunk
             this.totalChunks.decrementAndGet();
             return;
         }
 
-        //Dont process non full chunk sections
+        //Don't process non-full chunk sections
         var status = ChunkStatus.byName(chunk.getString("Status"));
         if (status != ChunkStatus.FULL && status != ChunkStatus.EMPTY) {//We also import empty since they are from data upgrade
             this.totalChunks.decrementAndGet();
@@ -499,7 +462,6 @@ public class WorldImporter implements IDataImporter {
         this.updateCallback.onUpdate(this.chunksProcessed.incrementAndGet(), this.estimatedTotalChunks.get());
     }
 
-    private static final byte[] EMPTY = new byte[0];
     private static final ThreadLocal<VoxelizedSection> SECTION_CACHE = ThreadLocal.withInitial(VoxelizedSection::createEmpty);
     private void importSectionNBT(int x, int y, int z, CompoundTag section) {
         if (section.getCompound("block_states").isEmpty()) {
@@ -525,7 +487,7 @@ public class WorldImporter implements IDataImporter {
 
         var blockStatesRes = blockStateCodec.parse(NbtOps.INSTANCE, section.getCompound("block_states"));
         if (!blockStatesRes.hasResultOrPartial()) {
-            //TODO: if its only partial, it means should try to upgrade the nbt format with datafixerupper probably
+            //TODO: if its only partial, it means should try to upgrade the nbt format with DFU probably
             return;
         }
         var blockStates = blockStatesRes.getPartialOrThrow();

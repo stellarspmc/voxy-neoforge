@@ -6,8 +6,6 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.platform.WindowEventHandler;
 import me.cortex.voxy.client.GPUSelectorWindows2;
 import me.cortex.voxy.common.util.ThreadUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.main.GameConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;

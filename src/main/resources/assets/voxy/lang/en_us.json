@@ -40,5 +40,9 @@
 
   "voxy.config.general.fogIntensity": "Fog intensity",
   "voxy.config.general.fogDensity": "Fog density",
-  "voxy.config.general.skyFogDistance": "Sky fog distance"
+  "voxy.config.general.skyFogDistance": "Sky fog distance",
+
+  "voxy.config.error.enable": "Voxy must be enabled in settings to use this",
+  "voxy.config.error.region": "Cannot find region folder for current dimension",
+  "voxy.config.error.sp": "You must be in single player to use this command"
 }

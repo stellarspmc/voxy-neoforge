@@ -29,11 +29,11 @@ public class VoxelizedSection {
         return this;
     }
 
-    private static int getIdx(int x, int y, int z, int shiftBy, int size) {
+    private static int getIdx(int x, int y, int z, int size) {
         int M = (1<<size)-1;
-        x = (x>>shiftBy)&M;
-        y = (y>>shiftBy)&M;
-        z = (z>>shiftBy)&M;
+        x = (x)&M;
+        y = (y)&M;
+        z = (z)&M;
         return (y<<(size<<1))|(z<<size)|(x);
     }
 
@@ -42,7 +42,7 @@ public class VoxelizedSection {
         offset |= lvl==2?(1<<12)|(1<<9):0;
         offset |= lvl==3?(1<<12)|(1<<9)|(1<<6):0;
         offset |= lvl==4?(1<<12)|(1<<9)|(1<<6)|(1<<3):0;
-        return this.section[getIdx(x, y, z, 0, 4-lvl) + offset];
+        return this.section[getIdx(x, y, z, 4-lvl) + offset];
     }
 
     public static VoxelizedSection createEmpty() {

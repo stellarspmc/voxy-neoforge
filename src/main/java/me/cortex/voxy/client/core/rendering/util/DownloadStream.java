@@ -69,7 +69,7 @@ public class DownloadStream {
         }
 
         long addr;
-        if (this.caddr == -1 || !this.allocationArena.expand(this.caddr, (int) size)) {
+        if (this.caddr == -1 || this.allocationArena.invertExpand(this.caddr, (int) size)) {
             this.caddr = this.allocationArena.alloc((int) size);//TODO: replace with allocFromLargest
             if (this.caddr == SIZE_LIMIT) {
                 Logger.warn("Download stream full, preemptively committing, this could cause bad things to happen");

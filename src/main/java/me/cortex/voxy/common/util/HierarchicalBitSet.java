@@ -43,10 +43,6 @@ public class HierarchicalBitSet {
         idx =  Long.numberOfTrailingZeros(~dp) + 64*idx;
         int ret = idx;
 
-        //if (this.isSet(ret)) {
-        //    throw new IllegalStateException();
-        //}
-
         dp |= 1L<<(idx&0x3f);
         this.D[idx>>6] = dp;
         if (dp==-1) {
@@ -69,9 +65,6 @@ public class HierarchicalBitSet {
     }
 
     private void set(int idx) {
-        //if (this.isSet(idx)) {
-        //    throw new IllegalStateException();
-        //}
 
         this.endId += idx==(this.endId+1)?1:0;
         long dp = this.D[idx>>6] |= 1L<<(idx&0x3f);
@@ -186,64 +179,6 @@ public class HierarchicalBitSet {
 
     public int getMaxIndex() {
         return this.endId;
-    }
-
-
-    public static void main3(String[] args)  {
-        var h = new HierarchicalBitSet(1<<19);
-        for (int i = 0; i < 1<<19; i++) {
-            if (h.allocateNext() != i) {
-                throw new IllegalStateException("At:" + i);
-            }
-            if (h.endId != i) {
-                throw new IllegalStateException();
-            }
-        }
-        for (int i = 0; i < 1<<18; i++) {
-            if (!h.free(i)) {
-                throw new IllegalStateException();
-            }
-        }
-        for (int i = (1<<19)-1; i != (1<<18)-1; i--) {
-            if (h.endId != i) {
-                throw new IllegalStateException();
-            }
-            if (!h.free(i)) {
-                throw new IllegalStateException();
-            }
-        }
-        if (h.endId != -1) {
-            throw new IllegalStateException();
-        }
-    }
-
-    public static void main2(String[] args) {
-        var h = new HierarchicalBitSet();
-        for (int i = 0; i < 64*32; i++) {
-            h.set(i);
-        }
-        h.set(0);
-        {
-            int i = 0;
-            while (i<64*32) {
-                int j = h.findNextFree(i);
-                if (h.isSet(j)) {
-                    throw new IllegalStateException();
-                }
-                for (int k = i; k < j; k++) {
-                    if (!h.isSet(k)) {
-                        throw new IllegalStateException();
-                    }
-                }
-                i = j + 1;
-            }
-        }
-        var r = new Random(0);
-        for (int i = 0; i < 500; i++) {
-            h.free(r.nextInt(64*32));
-        }
-
-        h.allocateNextConsecutiveCounted(10);
     }
 
 

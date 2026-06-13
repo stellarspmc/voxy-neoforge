@@ -27,14 +27,14 @@ public abstract class MixinDebugScreenOverlay {
     private boolean renderDebug;
 
     @Unique
-    private boolean lastDebugEnabledState = false;
+    private boolean voxy$lastDebugEnabledState = false;
 
     @Inject(method = "render", at = @At("HEAD"))
     private void manageGpuTiming(GuiGraphics guiGraphics, CallbackInfo ci) {
         boolean isDebugOpen = this.renderDebug;
 
-        if (isDebugOpen != lastDebugEnabledState) {
-            lastDebugEnabledState = isDebugOpen;
+        if (isDebugOpen != voxy$lastDebugEnabledState) {
+            voxy$lastDebugEnabledState = isDebugOpen;
 
             GPUTiming.INSTANCE.setEnabled(isDebugOpen);
             RenderStatistics.enabled = isDebugOpen;
@@ -46,12 +46,12 @@ public abstract class MixinDebugScreenOverlay {
         List<String> voxyLines = new ArrayList<>();
 
         if (!VoxyCommon.isAvailable()) {
-            voxyLines.add(ChatFormatting.RED + "voxy-"+VoxyCommon.MOD_VERSION);//Voxy installed, not avalible
+            voxyLines.add(ChatFormatting.RED + "voxy-"+VoxyCommon.MOD_VERSION);//Voxy installed, not available
             return;
         }
         var instance = VoxyCommon.getInstance();
         if (instance == null) {
-            voxyLines.add(ChatFormatting.YELLOW + "voxy-" + VoxyCommon.MOD_VERSION);//Voxy avalible, no instance active
+            voxyLines.add(ChatFormatting.YELLOW + "voxy-" + VoxyCommon.MOD_VERSION);//Voxy available, no instance active
             return;
         }
         VoxyRenderSystem vrs = null;

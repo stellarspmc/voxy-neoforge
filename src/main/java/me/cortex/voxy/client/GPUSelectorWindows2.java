@@ -107,11 +107,11 @@ public class GPUSelectorWindows2 {
     }
 
     private record PCIDeviceId(int vendor, int device, int subVendor, int subSystem, int revision, int busType) {}
-    private static int queryPCIAddress(int handle, int index, PCIDeviceId[] deviceOut) {
-        int ret = 0;
+    private static int queryPCIAddress(int handle, PCIDeviceId[] deviceOut) {
+        int ret;
         try (var stack = MemoryStack.stackPush()) {
             var buff = stack.calloc(4*7).order(ByteOrder.nativeOrder());
-            buff.putInt(0, index);
+            buff.putInt(0, 0);
             //KMTQAITYPE_PHYSICALADAPTERDEVICEIDS
             if ((ret = query(handle, 31, buff)) < 0) {
                 return ret;
@@ -126,7 +126,7 @@ public class GPUSelectorWindows2 {
             return -1;
         }
 
-        int ret = 0;
+        int ret;
         try (var stack = MemoryStack.stackPush()) {
             var query = stack.calloc(0x10).order(ByteOrder.nativeOrder());
             if ((ret = JNI.callPI(MemoryUtil.memAddress(query), D3DKMTEnumAdapters2)) < 0) {
@@ -168,7 +168,7 @@ public class GPUSelectorWindows2 {
 
                 PCIDeviceId[] out = new PCIDeviceId[1];
                 //Get the root adapter device
-                if ((ret = queryPCIAddress(handle, 0, out)) < 0) {
+                if ((ret = queryPCIAddress(handle, out)) < 0) {
                     Logger.error("Query pci error: " + ret);
                     //We errored
                     if (closeHandle(handle) < 0) {

@@ -6,13 +6,8 @@ import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
-import net.neoforged.neoforge.client.gui.ConfigurationScreen;
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
 
 import java.io.FileOutputStream;
@@ -22,20 +17,16 @@ import java.nio.channels.NonWritableChannelException;
 @Mod(value = "voxy", dist = Dist.CLIENT)
 public class VoxyClient {
 
-    public VoxyClient(ModContainer container, IEventBus modBusEvent) {
+    public VoxyClient() {
         NeoForge.EVENT_BUS.addListener(VoxyClient::onRegisterClientCommands);
-
-        //boolean isYaclLoaded = ModList.get().getModFileById("yet_another_config_lib_v3") != null;
-        container.registerExtensionPoint(IConfigScreenFactory.class, (minecraft, parentScreen) ->
-                new ConfigurationScreen(container, parentScreen));
     }
 
     public static void initVoxyClient() {
         Capabilities.init(); // Ensure clinit is called
 
-        if (Capabilities.INSTANCE.hasBrokenDepthSampler) {
+        if (Capabilities.INSTANCE.hasBrokenDepthSampler)
             Logger.error("AMD broken depth sampler detected, voxy does not work correctly and has been disabled, this will hopefully be fixed in the future");
-        }
+
 
         boolean systemSupported = Capabilities.INSTANCE.compute && Capabilities.INSTANCE.indirectParameters && !Capabilities.INSTANCE.hasBrokenDepthSampler;
         if (!systemSupported) Logger.error("Voxy is unsupported on your system.");
@@ -43,9 +34,7 @@ public class VoxyClient {
         if (systemSupported && System.getProperty("voxy.exclusiveLock", "false").equalsIgnoreCase("true")) {
             // Try to acquire the lock file
             var vf = Minecraft.getInstance().gameDirectory.toPath().resolve(".voxy");
-            if (!vf.toFile().isDirectory()) {
-                vf.toFile().mkdir();
-            }
+            if (!vf.toFile().isDirectory()) vf.toFile().mkdir();
             try (FileOutputStream fis = new FileOutputStream(vf.resolve("voxy.lock").toFile())) {
                 fis.getChannel().lock(0, Long.MAX_VALUE, false);
             } catch (NonWritableChannelException | IOException e) {

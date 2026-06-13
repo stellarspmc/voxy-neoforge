@@ -33,7 +33,7 @@ public class Service {
             return;
         }
         this.tasks.release();
-        this.sm.execute(this);
+        this.sm.execute();
     }
 
     boolean runJob() {

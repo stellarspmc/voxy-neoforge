@@ -9,6 +9,7 @@ import net.minecraft.Util;
 import oshi.SystemInfo;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Random;
 
 //Represents the layout of the current cpu running on
@@ -37,7 +38,7 @@ public class CpuLayout {
             }
             ThreadUtils.SetThreadSelectedCpuSetMasksWin32(Arrays.copyOf(msks, i), Arrays.copyOf(groups, i));
         } else if (platform == Util.OS.LINUX) {
-            Arrays.sort(affinities, (a, b) -> a.group - b.group);
+            Arrays.sort(affinities, Comparator.comparingInt(a -> a.group));
             long[] msks = new long[affinities.length];
             for (int i=0; i<affinities.length; i++) {
                 msks[i] = affinities[i].msk;

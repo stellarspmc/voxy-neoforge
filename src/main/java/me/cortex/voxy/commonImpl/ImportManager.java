@@ -8,11 +8,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class ImportManager {
-    //TODO:
-    //Taskbar.INSTANCE.setProgress(0,10000);
-    //Taskbar.INSTANCE.setIsProgression();
-    //Taskbar.INSTANCE.setProgress(a, Math.max(1, b));
-    //Taskbar.INSTANCE.setIsNone();
+    //TODO: taskbar things
 
     private final Map<WorldEngine, ImportTask> activeImporters = new HashMap<>();
 
@@ -68,11 +64,8 @@ public class ImportManager {
             {
                 var importerTask = this.activeImporters.get(importer.getEngine());
                 if (importerTask != null) {
-                    if (!importerTask.isCompleted()) {
-                        return false;
-                    } else {
-                        throw new IllegalStateException();
-                    }
+                    if (!importerTask.isCompleted()) return false;
+                    else throw new IllegalStateException();
                 }
             }
             task = this.createImportTask(importer);
@@ -86,9 +79,7 @@ public class ImportManager {
         try {
             engine.acquireRef();
             synchronized (this) {
-                if (this.activeImporters.containsKey(engine)) {
-                    return false;
-                }
+                if (this.activeImporters.containsKey(engine)) return false;
             }
             return this.tryRunImport(factory.get());
         } finally {
@@ -100,9 +91,7 @@ public class ImportManager {
         ImportTask task;
         synchronized (this) {
             task = this.activeImporters.get(engine);
-            if (task == null) {
-                return false;
-            }
+            if (task == null) return false;
         }
         task.shutdown();
         synchronized (this) {
@@ -118,9 +107,7 @@ public class ImportManager {
 
         var remTask = this.activeImporters.remove(task.importer.getEngine());
         if (remTask != null) {
-            if (remTask != task) {
-                throw new IllegalStateException();
-            }
+            if (remTask != task) throw new IllegalStateException();
         }
     }
 }

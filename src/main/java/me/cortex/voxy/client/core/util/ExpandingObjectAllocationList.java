@@ -10,9 +10,6 @@ public class ExpandingObjectAllocationList<T> {
     private final HierarchicalBitSet bitSet;
     private T[] objects;//Should maybe make a getter function instead
 
-    public ExpandingObjectAllocationList(Int2ObjectFunction<T[]> arrayGenerator) {
-        this(arrayGenerator, -1);
-    }
     public ExpandingObjectAllocationList(Int2ObjectFunction<T[]> arrayGenerator, int limit) {
         this.arrayGenerator = arrayGenerator;
         this.objects = this.arrayGenerator.apply(16);

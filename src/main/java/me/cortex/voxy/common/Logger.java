@@ -25,14 +25,9 @@ public class Logger {
             var parts = className.split("\\.");
             for (int i = 0; i < parts.length; i++) {
                 var part = parts[i];
-                if (i < parts.length-1) {//-2
-                    builder.append(part.charAt(0)).append(part.charAt(part.length()-1));
-                } else {
-                    builder.append(part);
-                }
-                if (i!=parts.length-1) {
-                    builder.append(".");
-                }
+                if (i < parts.length-1) builder.append(part.charAt(0)).append(part.charAt(part.length()-1));
+                else builder.append(part);
+                if (i!=parts.length-1) builder.append(".");
             }
             className = builder.toString();
         }
@@ -40,14 +35,10 @@ public class Logger {
     }
 
     public static void error(Object... args) {
-        if (SHUTUP) {
-            return;
-        }
+        if (SHUTUP) return;
         Throwable throwable = null;
         for (var i : args) {
-            if (i instanceof Throwable) {
-                throwable = (Throwable) i;
-            }
+            if (i instanceof Throwable) throwable = (Throwable) i;
         }
 
         String error = (INSERT_CLASS?("["+callClsName()+"]: "):"") + Stream.of(args).map(Logger::objToString).collect(Collectors.joining(" "));
@@ -68,27 +59,19 @@ public class Logger {
     }
 
     public static void warn(Object... args) {
-        if (SHUTUP) {
-            return;
-        }
+        if (SHUTUP) return;
         Throwable throwable = null;
         for (var i : args) {
-            if (i instanceof Throwable) {
-                throwable = (Throwable) i;
-            }
+            if (i instanceof Throwable) throwable = (Throwable) i;
         }
-        LOGGER.warn((INSERT_CLASS?("["+callClsName()+"]: "):"") + Stream.of(args).map(Logger::objToString).collect(Collectors.joining(" ")), throwable);
+        LOGGER.warn("{}{}", INSERT_CLASS ? ("[" + callClsName() + "]: ") : "", Stream.of(args).map(Logger::objToString).collect(Collectors.joining(" ")), throwable);
     }
 
     public static String info(Object... args) {
-        if (SHUTUP||SHUTUP_INFO) {
-            return "";
-        }
+        if (SHUTUP||SHUTUP_INFO) return "";
         Throwable throwable = null;
         for (var i : args) {
-            if (i instanceof Throwable) {
-                throwable = (Throwable) i;
-            }
+            if (i instanceof Throwable) throwable = (Throwable) i;
         }
         var val = (INSERT_CLASS?("["+callClsName()+"]: "):"") + Stream.of(args).map(Logger::objToString).collect(Collectors.joining(" "));
         LOGGER.info(val, throwable);
@@ -96,12 +79,8 @@ public class Logger {
     }
 
     private static String objToString(Object obj) {
-        if (obj == null) {
-            return "NULL";
-        }
-        if (obj.getClass().isArray()) {
-            return Arrays.deepToString((Object[]) obj);
-        }
+        if (obj == null) return "NULL";
+        if (obj.getClass().isArray()) return Arrays.deepToString((Object[]) obj);
         return obj.toString();
     }
 }

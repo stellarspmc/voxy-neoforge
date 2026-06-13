@@ -41,15 +41,6 @@ public class ConfigBuildCtx {
         return this;
     }
 
-    /**
-     * Pops a path from the build context path stack
-     * @return the build context
-     */
-    public ConfigBuildCtx popPath() {
-        this.pathStack.pop();
-        return this;
-    }
-
     //TODO: FINISH THIS and check and test
     private static String concatPath(String a, String b) {
         if (b.contains("..")) {
@@ -80,7 +71,7 @@ public class ConfigBuildCtx {
      * @return resolved path
      */
     public String resolvePath() {
-        String prev = "";
+        String prev;
         String path = "";
         do {
             prev = path;

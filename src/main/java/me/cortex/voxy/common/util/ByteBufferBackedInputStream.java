@@ -1,5 +1,7 @@
 package me.cortex.voxy.common.util;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -19,7 +21,7 @@ public class ByteBufferBackedInputStream extends InputStream {
         return this.buf.get() & 0xFF;
     }
 
-    public int read(byte[] bytes, int off, int len) throws IOException {
+    public int read(byte @NotNull [] bytes, int off, int len) throws IOException {
         if (!this.buf.hasRemaining()) {
             return -1;
         }

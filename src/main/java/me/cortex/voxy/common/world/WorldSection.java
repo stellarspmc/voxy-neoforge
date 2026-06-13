@@ -5,7 +5,6 @@ import me.cortex.voxy.commonImpl.VoxyCommon;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,9 +48,7 @@ public final class WorldSection {
     public final long key;
 
 
-    //Serialized states
-    long metadata;
-    long[] data = null;
+    long[] data;
     volatile int nonEmptyBlockCount = 0;//Note: only needed for level 0 sections
     volatile byte nonEmptyChildren;
 
@@ -105,14 +102,6 @@ public final class WorldSection {
         return (next&1) != 0;
 
 
-        /*
-        int prev, next;
-        do {
-            prev = (int) ATOMIC_STATE_HANDLE.get(this);
-            next = ((prev&1) != 0)?prev+2:prev;
-        } while (!ATOMIC_STATE_HANDLE.compareAndSet(this, prev, next));
-        return (next&1) != 0;
-         */
     }
 
     public int acquire() {
@@ -214,22 +203,6 @@ public final class WorldSection {
         return old;
     }
 
-    //Generates a copy of the data array, this is to help with atomic operations like rendering
-    public long[] copyData() {
-        this.assertNotFree();
-        return Arrays.copyOf(this.data, this.data.length);
-    }
-
-    public void copyDataTo(long[] cache) {
-        copyDataTo(cache, 0);
-    }
-
-    public void copyDataTo(long[] cache, int dstOffset) {
-        this.assertNotFree();
-        if ((cache.length-dstOffset) < this.data.length) throw new IllegalArgumentException();
-        System.arraycopy(this.data, 0, cache, dstOffset, this.data.length);
-    }
-
     public static int getChildIndex(int x, int y, int z) {
         return (x&1)|((y&1)<<2)|((z&1)<<1);
     }
@@ -280,14 +253,6 @@ public final class WorldSection {
         return prev != next;
     }
 
-    public void _unsafeSetNonEmptyChildren(byte nonEmptyChildren) {
-        NON_EMPTY_CHILD_HANDLE.set(this, nonEmptyChildren);
-    }
-
-    public static WorldSection _createRawUntrackedUnsafeSection(int lvl, int x, int y, int z) {
-        return new WorldSection(lvl, x, y, z, null);
-    }
-
     public void markDirty() {
         IS_DIRTY_HANDLE.getAndSet(this, true);
     }
@@ -306,7 +271,4 @@ public final class WorldSection {
         return this.isDirty&&!this.inSaveQueue;
     }
 
-    public boolean isFreed() {
-        return (((int)ATOMIC_STATE_HANDLE.get(this))&1)==0;
-    }
 }

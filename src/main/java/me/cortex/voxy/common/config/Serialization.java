@@ -7,7 +7,6 @@ import com.google.gson.stream.JsonWriter;
 import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.common.Mod;
 
 import java.io.BufferedReader;
 import java.io.IOException;

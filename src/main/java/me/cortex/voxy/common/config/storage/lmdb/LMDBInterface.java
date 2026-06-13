@@ -15,32 +15,6 @@ public class LMDBInterface {
         this.env = env;
     }
 
-    public static class Builder {
-        private final long env;
-        public Builder() {
-            //Create the environment
-            try (var stack = stackPush()) {
-                PointerBuffer pp = stack.mallocPointer(1);
-                E(mdb_env_create(pp));
-                this.env = pp.get(0);
-            }
-        }
-
-        public Builder setMaxDbs(int maxDbs) {
-            E(mdb_env_set_maxdbs(this.env, maxDbs));
-            return this;
-        }
-
-        public Builder open(String directory, int flags) {
-            E(mdb_env_open(this.env, directory, flags, 0664));
-            return this;
-        }
-
-        public LMDBInterface fetch() {
-            return new LMDBInterface(this.env);
-        }
-    }
-
     public void close() {
         mdb_env_close(env);
     }
@@ -123,9 +97,7 @@ public class LMDBInterface {
         }
 
         public <T> T transaction(int flags, TransactionWrappedCallback<T> callback) {
-            return LMDBInterface.this.transaction(flags, (stack, transaction) -> {
-                return callback.exec(new TransactionWrapper(transaction, stack).set(this));
-            });
+            return LMDBInterface.this.transaction(flags, (stack, transaction) -> callback.exec(new TransactionWrapper(transaction, stack).set(this)));
         }
 
         public int getDBI() {

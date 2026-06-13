@@ -6,13 +6,10 @@ import me.cortex.voxy.common.thread.ServiceManager;
 import me.cortex.voxy.common.util.ByteBufferBackedInputStream;
 import me.cortex.voxy.common.util.Pair;
 import me.cortex.voxy.common.voxelization.VoxelizedSection;
-import me.cortex.voxy.common.voxelization.WorldConversionFactory;
 import me.cortex.voxy.common.voxelization.WorldVoxilizedSectionMipper;
 import me.cortex.voxy.common.world.WorldEngine;
 import me.cortex.voxy.common.world.WorldUpdater;
 import me.cortex.voxy.common.world.other.Mapper;
-import me.cortex.voxy.commonImpl.importers.IDataImporter.ICompletionCallback;
-import me.cortex.voxy.commonImpl.importers.IDataImporter.IUpdateCallback;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -23,6 +20,7 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.apache.commons.io.IOUtils;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.util.zstd.Zstd;
@@ -52,7 +50,6 @@ public class DHImporter implements IDataImporter {
     private final Connection db;
     private final WorldEngine engine;
     private final Service service;
-    private final Level world;
     private final int bottomOfWorld;
     private final int worldHeightSections;
     private final Holder.Reference<Biome> defaultBiome;
@@ -71,7 +68,6 @@ public class DHImporter implements IDataImporter {
     }
     private final ConcurrentLinkedDeque<Task> tasks = new ConcurrentLinkedDeque<>();
     private static final class WorkCTX {
-        private final PreparedStatement stmt;
         private final ResettableArrayCache cache;
         private final long[] storageCache;
         private final byte[] colScratch;
@@ -81,8 +77,7 @@ public class DHImporter implements IDataImporter {
         private ByteBuffer zstdScratch2;
         private final long zstdDCtx;
 
-        public WorkCTX(PreparedStatement stmt, int worldHeight) {
-            this.stmt = stmt;
+        public WorkCTX(int worldHeight) {
             this.cache = new ResettableArrayCache(new BasicArrayCache());
             this.storageCache = new long[64*16*worldHeight];
             this.colScratch = new byte[1<<16];
@@ -101,7 +96,6 @@ public class DHImporter implements IDataImporter {
 
     public DHImporter(File file, WorldEngine worldEngine, Level mcWorld, ServiceManager servicePool, BooleanSupplier rateLimiter) {
         this.engine = worldEngine;
-        this.world = mcWorld;
         this.biomeRegistry = mcWorld.registryAccess().registryOrThrow(Registries.BIOME);
         this.defaultBiome = this.biomeRegistry.getHolder(Biomes.PLAINS).orElseThrow();
         this.blockRegistry = mcWorld.registryAccess().registryOrThrow(Registries.BLOCK);
@@ -119,10 +113,8 @@ public class DHImporter implements IDataImporter {
         this.service = servicePool.createService(()->{
             try {
                 var dataFetchStmt = this.db.prepareStatement("SELECT Data,ColumnGenerationStep,Mapping FROM FullData WHERE DetailLevel = 0 AND PosX = ? AND PosZ = ?;");
-                var ctx = new WorkCTX(dataFetchStmt, this.worldHeightSections*16);
-                return new Pair<>(()->{
-                    this.importSection(dataFetchStmt, ctx, this.tasks.poll());
-                },()->{
+                var ctx = new WorkCTX(this.worldHeightSections*16);
+                return new Pair<>(()-> this.importSection(dataFetchStmt, ctx, this.tasks.poll()),()->{
                     ctx.free();
                     try {
                         dataFetchStmt.close();
@@ -200,13 +192,11 @@ public class DHImporter implements IDataImporter {
 
     private static String getSerialBlockState(BlockState state) {
         var props = new ArrayList<>(state.getProperties());
-        props.sort((a, b) -> a.getName().compareTo(b.getName()));
+        props.sort(Comparator.comparing(Property::getName));
         StringBuilder b = new StringBuilder();
         for (var prop : props) {
             String val = "NULL";
-            if (state.hasProperty(prop)) {
-                val = state.getValue(prop).toString();
-            }
+            if (state.hasProperty(prop)) val = state.getValue(prop).toString();
             b.append("{").append(prop.getName()).append(":").append(val).append("}");
         }
         return b.toString();
@@ -240,15 +230,11 @@ public class DHImporter implements IDataImporter {
                 } else {
                     var sIdx = encEntry.indexOf(STATE_STRING_SEPARATOR, b);
                     String bStateStr = null;
-                    if (sIdx != -1) {
-                        bStateStr = encEntry.substring(sIdx + STATE_STRING_SEPARATOR.length());
-                    }
+                    if (sIdx != -1) bStateStr = encEntry.substring(sIdx + STATE_STRING_SEPARATOR.length());
                     var bId = ResourceLocation.parse(encEntry.substring(b, sIdx != -1 ? sIdx : encEntry.length()));
                     var maybeBlock = this.blockRegistry.getOptional(bId);
                     Block block = Blocks.AIR;
-                    if (maybeBlock.isPresent()) {
-                        block = maybeBlock.get();
-                    }
+                    if (maybeBlock.isPresent()) block = maybeBlock.get();
                     var state = block.defaultBlockState();
                     if (bStateStr != null && block != Blocks.AIR) {
                         boolean found = false;
@@ -259,13 +245,9 @@ public class DHImporter implements IDataImporter {
                                 break;
                             }
                         }
-                        if (!found) {
-                            Logger.warn("Could not find block state with data", encEntry.substring(b));
-                        }
+                        if (!found) Logger.warn("Could not find block state with data", encEntry.substring(b));
                     }
-                    if (block  == Blocks.AIR) {
-                        Logger.warn("Could not find block entry with id:", bId);
-                    }
+                    if (block == Blocks.AIR) Logger.warn("Could not find block entry with id:", bId);
                     blockId = this.engine.getMapper().getIdForBlockState(state);
                 }
             }
@@ -410,7 +392,7 @@ public class DHImporter implements IDataImporter {
                 //var columnGenStep = new byte[64*64];
                 //readStream(rs.getBinaryStream(2), cache, columnGenStep);
                 readColumnData(task.x, task.z, createDecompressedStream(task.compression, rs.getBinaryStream(1), ctx), ctx, mapping);
-            };
+            }
         } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -451,13 +433,13 @@ public class DHImporter implements IDataImporter {
         return this.engine;
     }
 
-    private static VarHandle create(Class<?> viewArrayClass) {
-        return MethodHandles.byteArrayViewVarHandle(viewArrayClass, ByteOrder.BIG_ENDIAN);
+    private static VarHandle create() {
+        return MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.BIG_ENDIAN);
     }
 
     public static final boolean HasRequiredLibraries;
 
-    private static final VarHandle LONG = create(long[].class);
+    private static final VarHandle LONG = create();
     static {
         boolean hasJDBC = false;
         try {

@@ -38,15 +38,6 @@ public class SectionSavingService {
         section.release();
     }
 
-    /*
-    public void enqueueSave(WorldSection section) {
-        if (section._getSectionTracker() != null && section._getSectionTracker().engine != null) {
-            this.enqueueSave(section._getSectionTracker().engine, section);
-        } else {
-            Logger.error("Tried saving world section, but did not have world associated");
-        }
-    }*/
-
     public boolean enqueueSave(WorldEngine in, WorldSection section, boolean nonBlocking, boolean sectionAlreadyAcquired) {
         //If its not enqueued for saving then enqueue it
         if (section.exchangeIsInSaveQueue(true)) {
@@ -58,12 +49,6 @@ public class SectionSavingService {
             if ((!nonBlocking) && this.getTaskCount() > SOFT_MAX_QUEUE_SIZE) {
                 //wait a bit
                 Thread.yield();
-                /*
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }*/
                 //If we are still full, process entries in the queue ourselves instead of waiting for the service
                 while (this.getTaskCount() > SOFT_MAX_QUEUE_SIZE && this.service.isLive()) {
                     if (!this.service.steal()) {

@@ -15,7 +15,7 @@ import java.util.function.*;
 
 public class SodiumConfigBuilder {
 
-    private static class Enabler {
+    protected static class Enabler {
         public final Predicate<ConfigState> tester;
         public final ResourceLocation[] dependencies;
         public final boolean joinParent;

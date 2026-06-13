@@ -8,7 +8,6 @@ import me.cortex.voxy.commonImpl.VoxyInstance;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.invoke.VarHandle;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WorldEngine {
@@ -111,11 +110,6 @@ public class WorldEngine {
         return getLevel(pos)+"@["+getX(pos)+", "+getY(pos)+", " + getZ(pos)+"]";
     }
 
-    //Marks a section as dirty, enqueuing it for saving and or render data rebuilding
-    public void markDirty(WorldSection section) {
-        this.markDirty(section, DEFAULT_UPDATE_FLAGS, 0);
-    }
-
     public void markDirty(WorldSection section, int changeState, int neighborMsk) {
         if (!this.isLive) throw new IllegalStateException("World is not live");
         if (section.tracker != this.sectionTracker) {
@@ -127,10 +121,6 @@ public class WorldEngine {
         if ((changeState&UPDATE_TYPE_DONT_SAVE)==0) {
             section.markDirty();
         }
-    }
-
-    public void addDebugData(List<String> debug) {
-        debug.add("ACC/SCC: " + this.sectionTracker.getLoadedCacheCount()+"/"+this.sectionTracker.getSecondaryCacheSize());//Active cache count, Secondary cache counts
     }
 
     public int getActiveSectionCount() {
@@ -188,14 +178,10 @@ public class WorldEngine {
         this.lastActiveTime = System.currentTimeMillis();
     }
 
-    public boolean saveSection(WorldSection section) {
-        return this.saveSection(section, false, false);
-    }
-
-    public boolean saveSection(WorldSection section, boolean nonBlocking, boolean sectionAlreadyAcquired) {
+    public boolean invertSaveSection(WorldSection section, boolean nonBlocking, boolean sectionAlreadyAcquired) {
         if (this.saveCallback != null) {
-            return this.saveCallback.save(this, section, nonBlocking, sectionAlreadyAcquired);
+            return !this.saveCallback.save(this, section, nonBlocking, sectionAlreadyAcquired);
         }
-        return false;
+        return true;
     }
 }

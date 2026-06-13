@@ -13,21 +13,13 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 public class PerThreadContextExecutor extends TrackedObject {
-    private static final class ThreadContext {
-        private final Runnable execute;
-        private final Runnable cleanup;
-
-        private ThreadContext(Pair<Runnable, Runnable> wrap) {
-            this(wrap.left(), wrap.right());
-        }
-
-        private ThreadContext(Runnable execute, Runnable cleanup) {
-            this.execute = execute;
-            this.cleanup = cleanup;
-        }
+    private record ThreadContext(Runnable execute, Runnable cleanup) {
+            private ThreadContext(Pair<Runnable, Runnable> wrap) {
+                this(wrap.left(), wrap.right());
+            }
     }
 
-    private static record ThreadObj(long id) implements LongSupplier {
+    private record ThreadObj(long id) implements LongSupplier {
         private static final AtomicLong IDENTIFIER = new AtomicLong();
         public ThreadObj() {
             this(IDENTIFIER.getAndIncrement());
@@ -48,9 +40,7 @@ public class PerThreadContextExecutor extends TrackedObject {
     private volatile boolean isLive = true;
 
     PerThreadContextExecutor(Supplier<Pair<Runnable, Runnable>> ctxFactory) {
-        this(ctxFactory, (e)->{
-            Logger.error("Executor had the following exception",e);
-        });
+        this(ctxFactory, (e)-> Logger.error("Executor had the following exception",e));
     }
     PerThreadContextExecutor(Supplier<Pair<Runnable, Runnable>> ctxFactory, Consumer<Exception> exceptionHandler) {
         this.contextFactory = ()->new ThreadContext(ctxFactory.get());
@@ -100,10 +90,6 @@ public class PerThreadContextExecutor extends TrackedObject {
     @Override
     public void free() {
         this.shutdown();
-    }
-
-    public boolean isLive() {
-        return this.isLive;
     }
 
 

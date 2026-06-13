@@ -51,7 +51,7 @@ vec2 getTAA();
 
 UnpackedNode node22;
 //Sets up screenspace with the given node id, returns true on success false on failure/should not continue
-//Accesses data that is setup in the main traversal and is just shared to here
+//Accesses data that is setup in the main1 traversal and is just shared to here
 void setupScreenspace(in UnpackedNode node) {
     //TODO: Need to do aabb size for the nodes, it must be an overesimate of all the children
 

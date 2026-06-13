@@ -24,7 +24,7 @@ public class UnifiedServiceThreadPool {
         this.selfBlock = this.groupSemaphore.createBlock();
     }
 
-    private final void release(int i) {this.groupSemaphore.pooledRelease(i);}
+    private void release(int i) {this.groupSemaphore.pooledRelease(i);}
 
     public boolean setNumThreads(int threads) {
         synchronized (this.threads) {

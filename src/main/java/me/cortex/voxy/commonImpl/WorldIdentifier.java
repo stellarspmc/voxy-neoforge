@@ -29,9 +29,7 @@ public class WorldIdentifier {
     @Nullable transient WeakReference<WorldEngine> cachedEngineObject;
 
     public WorldIdentifier(@NotNull ResourceKey<Level> key, long biomeSeed, @Nullable ResourceKey<DimensionType> dimension) {
-        if (key == null) {
-            throw new IllegalStateException("Key cannot be null");
-        }
+        if (key == null) throw new IllegalStateException("Key cannot be null");
         dimension = dimension==null?NULL_DIM_KEY:dimension;
         this.key = key;
         this.biomeSeed = biomeSeed;
@@ -85,26 +83,20 @@ public class WorldIdentifier {
 
     public static WorldIdentifier of(Level level) {
         //Gets or makes an identifier for world
-        if (level == null) {
-            return null;
-        }
+        if (level == null) return null;
         return ((IWorldGetIdentifier)level).voxy$getIdentifier();
     }
 
     //Common utility function to get or create a world engine
     public static WorldEngine ofEngine(Level level) {
         var id = of(level);
-        if (id == null) {
-            return null;
-        }
+        if (id == null) return null;
         return id.getOrCreateEngine();
     }
 
     public static WorldEngine ofEngineNullable(Level level) {
         var id = of(level);
-        if (id == null) {
-            return null;
-        }
+        if (id == null) return null;
         return id.getNullable();
     }
 
@@ -122,9 +114,9 @@ public class WorldIdentifier {
     private static long registryKeyHashCode(ResourceKey<?> key) {
         var A = key.registry();
         var B = key.location();
-        int a = A==null?0:A.hashCode();
-        int b = B==null?0:B.hashCode();
-        return (Integer.toUnsignedLong(a)<<32)|Integer.toUnsignedLong(b);
+        int a = A == null ? 0 : A.hashCode();
+        int b = B == null ? 0 : B.hashCode();
+        return (Integer.toUnsignedLong(a) << 32) | Integer.toUnsignedLong(b);
     }
 
 
