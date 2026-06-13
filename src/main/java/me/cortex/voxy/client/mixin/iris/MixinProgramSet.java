@@ -21,13 +21,12 @@ import java.util.function.Function;
 
 @Mixin(value = ProgramSet.class, remap = false)
 public class MixinProgramSet implements IGetVoxyPatchData {
-    @Shadow @Final private PackDirectives packDirectives;
-    @Unique IrisShaderPatch patchData;
+    @Unique IrisShaderPatch voxy$patchData;
 
     @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/irisshaders/iris/shaderpack/programs/ProgramSet;locateDirectives()V", shift = At.Shift.BEFORE))
     private void voxy$injectPatchMaker(AbsolutePackPath directory, Function<AbsolutePackPath, String> sourceProvider, ShaderProperties shaderProperties, ShaderPack pack, CallbackInfo ci) {
         if (VoxyConfig.CONFIG.isRenderingEnabled() && IrisUtil.SHADER_SUPPORT) {
-            this.patchData = IrisShaderPatch.makePatch(directory, sourceProvider);
+            this.voxy$patchData = IrisShaderPatch.makePatch(directory, sourceProvider);
         }
         /*
         if (this.patchData != null) {

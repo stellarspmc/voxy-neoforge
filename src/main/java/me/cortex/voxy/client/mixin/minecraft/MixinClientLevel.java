@@ -4,7 +4,6 @@ import me.cortex.voxy.client.config.VoxyConfig;
 import me.cortex.voxy.common.world.service.VoxelIngestService;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import me.cortex.voxy.commonImpl.WorldIdentifier;
-import net.minecraft.client.multiplayer.ClientChunkCache;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.renderer.LevelRenderer;
@@ -18,9 +17,7 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.dimension.DimensionType;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -32,11 +29,8 @@ import java.util.function.Supplier;
 public abstract class MixinClientLevel {
 
     @Unique
-    private int bottomSectionY;
+    private int voxy$bottomSectionY;
 
-    @Shadow @Final public LevelRenderer levelRenderer;
-
-    @Shadow public abstract ClientChunkCache getChunkSource();
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void voxy$getBottom(
@@ -51,7 +45,7 @@ public abstract class MixinClientLevel {
             boolean debugWorld,
             long seed,
             CallbackInfo cir) {
-        this.bottomSectionY = ((Level)(Object)this).getMinBuildHeight()>>4;
+        this.voxy$bottomSectionY = ((Level)(Object)this).getMinBuildHeight()>>4;
     }
 
     @Inject(method = "setBlocksDirty", at = @At("TAIL"))
@@ -78,13 +72,13 @@ public abstract class MixinClientLevel {
             //Is not using voxy$cheekyGetChunk as dont think is need
             var chunk = self.getChunk(pos.getX()>>4, pos.getZ()>>4, ChunkStatus.FULL, false);
             if (chunk != null) {
-                var section = chunk.getSection(csp.y() - this.bottomSectionY);
+                var section = chunk.getSection(csp.y() - this.voxy$bottomSectionY);
                 var lp = self.getLightEngine();
 
                 var blp = lp.getLayerListener(LightLayer.BLOCK).getDataLayerData(csp);
                 var slp = lp.getLayerListener(LightLayer.SKY).getDataLayerData(csp);
 
-                VoxelIngestService.rawIngest(wi, section, csp.x(), csp.y(), csp.z(), blp == null ? null : blp.copy(), slp == null ? null : slp.copy());
+                VoxelIngestService.rawIngest(wi, csp.x(), csp.y(), csp.z(), blp == null ? null : blp.copy(), slp == null ? null : slp.copy());
             }
         }
     }

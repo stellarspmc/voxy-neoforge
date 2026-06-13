@@ -20,7 +20,7 @@ public class WorldConversionFactory {
         private final int[] biomeCache = new int[4*4*4];
         private final WeakHashMap<Mapper, Reference2IntOpenHashMap<BlockState>> localMapping = new WeakHashMap<>();
         private int[] paletteCache = new int[1024];
-        private final long[] zoomCellCache = new long[5*5*5];
+
         private Reference2IntOpenHashMap<BlockState> getLocalMapping(Mapper mapper) {
             return this.localMapping.computeIfAbsent(mapper, (a_)->new Reference2IntOpenHashMap<>());
         }
@@ -30,6 +30,7 @@ public class WorldConversionFactory {
             }
             return this.paletteCache;
         }
+
     }
 
     //TODO: create a mapping for world/mapper -> local mapping
@@ -80,7 +81,7 @@ public class WorldConversionFactory {
                     int blockId = -1;
                     try {
                         state = vp.valueFor(i);
-                    } catch (Exception e) {
+                    } catch (Exception ignored1) {
                     }
                     if (state != null) {
                         blockId = blockCache.getOrDefault(state, -1);
@@ -116,7 +117,7 @@ public class WorldConversionFactory {
                                            PalettedContainer<BlockState> blockContainer,
                                            PalettedContainerRO<Holder<Biome>> biomeContainer,
                                            ILightingSupplier lightSupplier) {
-        return convert(section, stateMapper, blockContainer, biomeContainer, lightSupplier, false, 0);
+        return convert(section, stateMapper, blockContainer, biomeContainer, lightSupplier, false);
     }
 
     public static VoxelizedSection convert(VoxelizedSection section,
@@ -124,21 +125,19 @@ public class WorldConversionFactory {
                                            PalettedContainer<BlockState> blockContainer,
                                            PalettedContainerRO<Holder<Biome>> biomeContainer,
                                            ILightingSupplier lightSupplier,
-                                           boolean shouldZoom,
-                                           long zoomSeed) {
+                                           boolean shouldZoom) {
         //Cheat by creating a local pallet then read the data directly
         var cache = THREAD_LOCAL.get();
         var blockCache = cache.getLocalMapping(stateMapper);
 
         var biomes = cache.biomeCache;
         var data = section.section;
-        var zoomCells = cache.zoomCellCache;
 
         var vp = blockContainer.data.palette();
         var pc = cache.getPaletteCache(vp.getSize());
         GlobalPalette<BlockState> bps = null;
 
-        int pcc = 0;
+        int pcc;
         if (blockContainer.data.palette() instanceof GlobalPalette<BlockState> _bps) {
             bps = _bps;
             pcc = bps.getSize();
@@ -159,10 +158,6 @@ public class WorldConversionFactory {
                         shouldZoom &= inital == bid;//Evil hacky trick, we only need to zoom if on a biome boarder
                     }
                 }
-            }
-
-            if (shouldZoom) {
-                computeZoomCells(biomes, zoomSeed, zoomCells);
             }
         }
 
@@ -214,17 +209,6 @@ public class WorldConversionFactory {
         }
         section.lvl0NonAirCount = nonZeroCnt;
         return section;
-    }
-
-
-    private static void computeZoomCells(int[] biomes, long zoomSeed, long[] zoomInfo) {
-        for (int cy = 0; cy<4; cy++) {
-            for (int cz = 0; cz<4; cz++) {
-                for (int cx = 0; cx<4; cx++) {
-
-                }
-            }
-        }
     }
 
     //Support for other mods etc that use this entry point

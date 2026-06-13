@@ -203,7 +203,7 @@ public class DHImporter implements IDataImporter {
     }
 
     //TODO: add global mapping cache (with thread local secondary cache)
-    private long[] readMappings(InputStream in, WorkCTX ctx) throws IOException {
+    private long[] readMappings(InputStream in) throws IOException {
         final String BLOCK_STATE_SEPARATOR_STRING = "_DH-BSW_";
         final String STATE_STRING_SEPARATOR = "_STATE_";
         var stream = new DataInputStream(in);
@@ -388,7 +388,7 @@ public class DHImporter implements IDataImporter {
             dataFetchStmt.setInt(1, task.x);
             dataFetchStmt.setInt(2, task.z);
             try (var rs = dataFetchStmt.executeQuery()) {
-                var mapping = readMappings(createDecompressedStream(task.compression, rs.getBinaryStream(3), ctx), ctx);
+                var mapping = readMappings(createDecompressedStream(task.compression, rs.getBinaryStream(3), ctx));
                 //var columnGenStep = new byte[64*64];
                 //readStream(rs.getBinaryStream(2), cache, columnGenStep);
                 readColumnData(task.x, task.z, createDecompressedStream(task.compression, rs.getBinaryStream(1), ctx), ctx, mapping);

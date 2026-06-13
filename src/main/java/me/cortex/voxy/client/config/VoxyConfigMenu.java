@@ -32,14 +32,12 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
 
         final var RENDER_RELOAD = OptionFlag.REQUIRES_RENDERER_RELOAD.getId().toString();
 
-        SodiumConfigBuilder.buildToSodium(B, cc, CFG::save, postOp->{
-                    postOp.register("voxy:update_threads", ()->{
-                        var instance = VoxyCommon.getInstance();
-                        if (instance != null) {
-                            instance.updateDedicatedThreads();
-                        }
-                    }, "voxy:enabled").register("voxy:iris_reload", IrisUtil::reload);
-                },
+        SodiumConfigBuilder.buildToSodium(B, cc, CFG::save, postOp-> postOp.register("voxy:update_threads", ()->{
+            var instance = VoxyCommon.getInstance();
+            if (instance != null) {
+                instance.updateDedicatedThreads();
+            }
+        }, "voxy:enabled").register("voxy:iris_reload", IrisUtil::reload),
                 new Page(Component.translatable("voxy.config.general"),
                         new Group(
                                 new BoolOption(
@@ -122,7 +120,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                     "voxy:eviromental_fog",
                                     Component.translatable("voxy.config.general.environmental_fog"),
                                     () -> CFG.useEnvironmentalFog,
-                                    v -> { CFG.useEnvironmentalFog = v; })
+                                    v -> CFG.useEnvironmentalFog = v)
                                         .setPostChangeFlags(RENDER_RELOAD),
                                 new EnumOption<>("voxy:ssao_mode",
                                         SSAO.SSAOMode.class,

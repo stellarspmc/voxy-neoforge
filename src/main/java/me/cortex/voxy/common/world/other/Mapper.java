@@ -22,16 +22,14 @@ import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FluidState;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -44,7 +42,6 @@ public class Mapper {
     private static final int BIOME_TYPE = 2;
 
     private final IMappingStorage storage;
-    public static final long UNKNOWN_MAPPING = -1;
     public static final long AIR = 0;
 
     private final ReentrantLock blockLock = new ReentrantLock();
@@ -78,20 +75,12 @@ public class Mapper {
         return (int) ((id>>27)&((1<<20)-1));
     }
 
-    public static int getBiomeId(long id) {
-        return (int) ((id>>47)&0x1FF);
-    }
-
     public static int getLightId(long id) {
         return (int) ((id>>56)&0xFF);
     }
 
     public static long withLight(long id, int light) {
         return (id&(~(0xFFL<<56)))|(Integer.toUnsignedLong(light&0xFF)<<56);
-    }
-
-    public static long withBlockBiome(long id, int block, int biome) {
-        return (id&(0xFFL<<56))|(Integer.toUnsignedLong(block)<<27)|(Integer.toUnsignedLong(biome)<<47);
     }
 
     public static long airWithLight(int light) {
@@ -145,12 +134,12 @@ public class Mapper {
         }
 
         if (!sentryErrors.isEmpty()) {
-            forceResave[0] |= true;
+            forceResave[0] = true;
             //Insert garbage types into the mapping for those blocks, TODO:FIXME: Need to upgrade the type or have a solution to error blocks
             var rand = new Random();
             for (var error : sentryErrors) {
                 while (true) {
-                    var state = new StateEntry(error.right(), Block.BLOCK_STATE_REGISTRY.byId(rand.nextInt(Block.BLOCK_STATE_REGISTRY.size() - 1)));
+                    var state = new StateEntry(error.right(), Objects.requireNonNull(Block.BLOCK_STATE_REGISTRY.byId(rand.nextInt(Block.BLOCK_STATE_REGISTRY.size() - 1))));
                     if (this.block2stateEntry.put(state.state, state) == null) {
                         sentries.add(state);
                         break;
@@ -376,17 +365,17 @@ public class Mapper {
                     }
 
                     @Override
-                    public BlockEntity getBlockEntity(BlockPos arg0) {
+                    public BlockEntity getBlockEntity(@NotNull BlockPos arg0) {
                         return null;
                     }
 
                     @Override
-                    public BlockState getBlockState(BlockPos blockPos) {
+                    public @NotNull BlockState getBlockState(@NotNull BlockPos blockPos) {
                         return state;
                     }
 
                     @Override
-                    public FluidState getFluidState(BlockPos blockPos) {
+                    public @NotNull FluidState getFluidState(@NotNull BlockPos blockPos) {
                         return state.getFluidState();
                     }
                     
@@ -424,7 +413,7 @@ public class Mapper {
                         return new StateEntry(id, Blocks.AIR.defaultBlockState());
                     } else {
                         Logger.info("Fixed blockstate to: " + state.getOrThrow());
-                        forceResave[0] |= true;
+                        forceResave[0] = true;
                         return new StateEntry(id, state.getOrThrow());
                     }
                 } else {
@@ -436,39 +425,32 @@ public class Mapper {
         }
     }
 
-    public static final class BiomeEntry {
-        public final int id;
-        public final String biome;
-
-        public BiomeEntry(int id, String biome) {
-            this.id = id;
-            this.biome = biome;
-        }
+    public record BiomeEntry(int id, String biome) {
 
         public byte[] serialize() {
-            try {
-                var serialized = new CompoundTag();
-                serialized.putInt("id", this.id);
-                serialized.putString("biome_id", this.biome);
-                var out = new ByteArrayOutputStream();
-                NbtIo.writeCompressed(serialized, out);
-                return out.toByteArray();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public static BiomeEntry deserialize(int id, byte[] data) {
-            try {
-                var compound = NbtIo.readCompressed(new ByteArrayInputStream(data), NbtAccounter.unlimitedHeap());
-                if (compound.getInt("id") != id) {
-                    throw new IllegalStateException("Encoded id != expected id");
+                try {
+                    var serialized = new CompoundTag();
+                    serialized.putInt("id", this.id);
+                    serialized.putString("biome_id", this.biome);
+                    var out = new ByteArrayOutputStream();
+                    NbtIo.writeCompressed(serialized, out);
+                    return out.toByteArray();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
                 }
-                String biome = compound.getString("biome_id");
-                return new BiomeEntry(id, biome);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            }
+
+            public static BiomeEntry deserialize(int id, byte[] data) {
+                try {
+                    var compound = NbtIo.readCompressed(new ByteArrayInputStream(data), NbtAccounter.unlimitedHeap());
+                    if (compound.getInt("id") != id) {
+                        throw new IllegalStateException("Encoded id != expected id");
+                    }
+                    String biome = compound.getString("biome_id");
+                    return new BiomeEntry(id, biome);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
-    }
 }

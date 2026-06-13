@@ -1,8 +1,6 @@
 package me.cortex.voxy.common.config.storage.lmdb;
 
 import org.lwjgl.PointerBuffer;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.lmdb.MDBEnvInfo;
 
 import java.nio.IntBuffer;
 
@@ -23,10 +21,6 @@ public class LMDBInterface {
         if (rc != MDB_SUCCESS) {
             throw new IllegalStateException("Code: " + rc + " msg: " + mdb_strerror(rc));
         }
-    }
-
-    public void setMapSize(long size) {
-        E(mdb_env_set_mapsize(this.env, size));
     }
 
     public <T> T transaction(TransactionCallback<T> transaction) {
@@ -56,27 +50,6 @@ public class LMDBInterface {
         return ret;
     }
 
-    public Database createDb(String name) {
-        return this.createDb(name, MDB_CREATE|MDB_INTEGERKEY);
-    }
-
-    public Database createDb(String name, int flags) {
-        return new Database(name, flags);
-    }
-
-    public LMDBInterface flush(boolean force) {
-        E(mdb_env_sync(this.env, force));
-        return this;
-    }
-
-    public long getMapSize() {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            MDBEnvInfo info = MDBEnvInfo.calloc(stack);
-            E(mdb_env_info(this.env, info));
-            return info.me_mapsize();
-        }
-    }
-
     public class Database {
         private final int dbi;
         public Database(String name, int flags) {
@@ -89,15 +62,6 @@ public class LMDBInterface {
 
         public void close() {
             mdb_dbi_close(LMDBInterface.this.env, this.dbi);
-        }
-
-        //TODO: make a MDB_RDONLY varient
-        public <T> T transaction(TransactionWrappedCallback<T> callback) {
-            return this.transaction(0, callback);
-        }
-
-        public <T> T transaction(int flags, TransactionWrappedCallback<T> callback) {
-            return LMDBInterface.this.transaction(flags, (stack, transaction) -> callback.exec(new TransactionWrapper(transaction, stack).set(this)));
         }
 
         public int getDBI() {

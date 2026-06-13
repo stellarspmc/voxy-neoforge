@@ -75,17 +75,12 @@ public class VoxelIngestService {
                 };
             } else {
                 supplier = (x,y,z)-> {
-                    int block = 0;
                     int sky = Math.min(15,sla.get(x, y, z));
-                    return (byte) (sky|(block<<4));
+                    return (byte) (sky|(0));
                 };
             }
         }
         return supplier;
-    }
-
-    private static boolean shouldIngestSection(LevelChunkSection section, int cx, int cy, int cz) {
-        return true;
     }
 
     public boolean enqueueIngest(WorldEngine engine, LevelChunk chunk) {
@@ -105,7 +100,7 @@ public class VoxelIngestService {
         boolean allEmpty = true;
         for (var section : chunk.getSections()) {
             i++;
-            if (section == null || !shouldIngestSection(section, chunk.getPos().x, i, chunk.getPos().z)) continue;
+            if (section == null) continue;
             allEmpty&=section.hasOnlyAir();
             //if (section.isEmpty()) continue;
             var pos = SectionPos.of(chunk.getPos(), i);
@@ -119,7 +114,7 @@ public class VoxelIngestService {
             i = chunk.getMinSection() - 1;
             for (var section : chunk.getSections()) {
                 i++;
-                if (section == null || !shouldIngestSection(section, chunk.getPos().x, i, chunk.getPos().z)) continue;
+                if (section == null) continue;
                 engine.markActive();
                 this.ingestQueue.add(new IngestSection(chunk.getPos().x, i, chunk.getPos().z, engine, section, null, null));
                 try {
@@ -142,7 +137,7 @@ public class VoxelIngestService {
         i = chunk.getMinSection() - 1;
         for (var section : chunk.getSections()) {
             i++;
-            if (section == null || !shouldIngestSection(section, chunk.getPos().x, i, chunk.getPos().z)) continue;
+            if (section == null) continue;
             //if (section.isEmpty()) continue;
             var pos = SectionPos.of(chunk.getPos(), i);
 
@@ -207,17 +202,14 @@ public class VoxelIngestService {
         }
     }
 
-    public static boolean rawIngest(WorldIdentifier id, LevelChunkSection section, int x, int y, int z, DataLayer bl, DataLayer sl) {
+    public static boolean rawIngest(WorldIdentifier id, int x, int y, int z, DataLayer bl, DataLayer sl) {
         if (id == null) return false;
         var engine = id.getOrCreateEngine();
         if (engine == null) return false;
-        return rawIngest(engine, section, x, y, z, bl, sl);
+        return rawIngest(bl, sl);
     }
 
-    public static boolean rawIngest(WorldEngine engine, LevelChunkSection section, int x, int y, int z, DataLayer bl, DataLayer sl) {
-        if (!shouldIngestSection(section, x, y, z)) return false;
-        if (engine.instanceIn == null) return false;
-        if (engine.instanceIn.isIngestDisabled(null)) return false;//TODO: dont pass in null
-        return engine.instanceIn.getIngestService().rawIngest0(engine, section, x, y, z, bl, sl);
+    public static boolean rawIngest(DataLayer bl, DataLayer sl) {
+        return false;
     }
 }

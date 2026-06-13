@@ -146,9 +146,7 @@ public class IrisVoxyRenderPipelineData {
 
     public record StructLayout(int size, String layout, LongConsumer updater) {}
     private static StructLayout createUniformLayoutStructAndUpdater(List<UniformWritingHolder> uniforms) {
-        if (uniforms.size() == 0) {
-            return null;
-        }
+        if (uniforms.isEmpty()) return null;
 
         List<UniformWritingHolder>[] ordering = new List[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>()};
 
@@ -227,54 +225,54 @@ public class IrisVoxyRenderPipelineData {
     }
 
     private static LongConsumer createWriter(long offset, FunctionReturn ret, CachedUniform uniform) {
-        if (uniform instanceof BooleanCachedUniform bcu) {
-            return ptr->{ptr += offset;
+        return switch (uniform) {
+            case BooleanCachedUniform bcu -> ptr -> {
+                ptr += offset;
                 bcu.writeTo(ret);
-                MemoryUtil.memPutInt(ptr, ret.booleanReturn?1:0);
+                MemoryUtil.memPutInt(ptr, ret.booleanReturn ? 1 : 0);
             };
-        } else if (uniform instanceof FloatCachedUniform fcu) {
-            return ptr->{ptr += offset;
+            case FloatCachedUniform fcu -> ptr -> {
+                ptr += offset;
                 fcu.writeTo(ret);
                 MemoryUtil.memPutFloat(ptr, ret.floatReturn);
             };
-        } else if (uniform instanceof IntCachedUniform icu) {
-            return ptr->{ptr += offset;
+            case IntCachedUniform icu -> ptr -> {
+                ptr += offset;
                 icu.writeTo(ret);
                 MemoryUtil.memPutInt(ptr, ret.intReturn);
             };
-        } else if (uniform instanceof Float2VectorCachedUniform v2fcu) {
-            return ptr->{ptr += offset;
+            case Float2VectorCachedUniform v2fcu -> ptr -> {
+                ptr += offset;
                 v2fcu.writeTo(ret);
-                ((Vector2f)ret.objectReturn).getToAddress(ptr);
+                ((Vector2f) ret.objectReturn).getToAddress(ptr);
             };
-        } else if (uniform instanceof Float3VectorCachedUniform v3fcu) {
-            return ptr->{ptr += offset;
+            case Float3VectorCachedUniform v3fcu -> ptr -> {
+                ptr += offset;
                 v3fcu.writeTo(ret);
-                ((Vector3f)ret.objectReturn).getToAddress(ptr);
+                ((Vector3f) ret.objectReturn).getToAddress(ptr);
             };
-        } else if (uniform instanceof Float4VectorCachedUniform v4fcu) {
-            return ptr->{ptr += offset;
+            case Float4VectorCachedUniform v4fcu -> ptr -> {
+                ptr += offset;
                 v4fcu.writeTo(ret);
-                ((Vector4f)ret.objectReturn).getToAddress(ptr);
+                ((Vector4f) ret.objectReturn).getToAddress(ptr);
             };
-        } else if (uniform instanceof Int2VectorCachedUniform v2icu) {
-            return ptr->{ptr += offset;
+            case Int2VectorCachedUniform v2icu -> ptr -> {
+                ptr += offset;
                 v2icu.writeTo(ret);
-                ((Vector2i)ret.objectReturn).getToAddress(ptr);
+                ((Vector2i) ret.objectReturn).getToAddress(ptr);
             };
-        } else if (uniform instanceof Int3VectorCachedUniform v3icu) {
-            return ptr->{ptr += offset;
+            case Int3VectorCachedUniform v3icu -> ptr -> {
+                ptr += offset;
                 v3icu.writeTo(ret);
-                ((Vector3i)ret.objectReturn).getToAddress(ptr);
+                ((Vector3i) ret.objectReturn).getToAddress(ptr);
             };
-        } else if (uniform instanceof Float4MatrixCachedUniform f4mcu) {
-            return ptr->{ptr += offset;
+            case Float4MatrixCachedUniform f4mcu -> ptr -> {
+                ptr += offset;
                 f4mcu.writeTo(ret);
-                ((Matrix4f)ret.objectReturn).getToAddress(ptr);
+                ((Matrix4f) ret.objectReturn).getToAddress(ptr);
             };
-        } else {
-            throw new IllegalStateException("Unknown uniform type " + uniform.getClass().getName());
-        }
+            default -> throw new IllegalStateException("Unknown uniform type " + uniform.getClass().getName());
+        };
     }
 
 
@@ -316,11 +314,7 @@ public class IrisVoxyRenderPipelineData {
 
             @Override
             public DynamicLocationalUniformHolder uniform1i(String name, IntSupplier value, ValueUpdateNotifier notifier) {
-                this.injectDynamicUniformType(name, UniformType.INT, offset->{
-                    return ptr->{
-                        MemoryUtil.memPutInt(ptr+offset, value.getAsInt());
-                    };
-                });
+                this.injectDynamicUniformType(name, UniformType.INT, offset-> ptr-> MemoryUtil.memPutInt(ptr+offset, value.getAsInt()));
                 return this;
             }
 
@@ -332,11 +326,7 @@ public class IrisVoxyRenderPipelineData {
 
             @Override
             public DynamicLocationalUniformHolder uniform1f(String name, FloatSupplier value, ValueUpdateNotifier notifier) {
-                this.injectDynamicUniformType(name, UniformType.FLOAT, offset->{
-                    return ptr->{
-                        MemoryUtil.memPutFloat(ptr+offset, value.getAsFloat());
-                    };
-                });
+                this.injectDynamicUniformType(name, UniformType.FLOAT, offset-> ptr-> MemoryUtil.memPutFloat(ptr+offset, value.getAsFloat()));
                 return this;
             }
 
@@ -348,21 +338,16 @@ public class IrisVoxyRenderPipelineData {
 
             @Override
             public DynamicLocationalUniformHolder uniform3f(String name, Supplier<Vector3f> value, ValueUpdateNotifier notifier) {
-                this.injectDynamicUniformType(name, UniformType.VEC3, offset->{
-                    return ptr->{
-                      value.get().getToAddress(ptr+offset);
-                    };
-                });
+                this.injectDynamicUniformType(name, UniformType.VEC3, offset-> ptr-> value.get().getToAddress(ptr+offset));
                 return this;
             }
 
             private void injectDynamicUniformType(String name, UniformType type, Long2ObjectFunction<LongConsumer> supplier) {
                 var names = patch.getUniformList();
-                for (int i = 0; i < names.length; i++) {
-                    if (names[i].equals(name)) {
-                        if (!seenUniforms.add(name)) {
+                for (String s : names) {
+                    if (s.equals(name)) {
+                        if (!seenUniforms.add(name))
                             throw new IllegalArgumentException("Already added uniform: " + name);
-                        }
                         uniforms.add(new UniformWritingHolder(name, type, supplier));
                         break;
                     }
@@ -382,11 +367,7 @@ public class IrisVoxyRenderPipelineData {
 
                 if (uniform instanceof BooleanUniform bu) {
                     //TODO: need to assert the loc is from a actually valid location
-                    int loc = bu.getLocation();
-                    var ul = patch.getUniformList();
-                    if (loc<ul.length) {
-                        var uniformName = ul[loc];
-                    }
+                    patch.getUniformList();
                 }
                 return this;
             }
@@ -453,11 +434,9 @@ public class IrisVoxyRenderPipelineData {
                 return samplerNameSet.contains(s);
             }
 
-            public boolean hasSampler(String... names) {
-                for (var name : names) {
-                    if (samplerNameSet.contains(name)) return true;
-                }
-                return false;
+            public boolean doesNotHaveSampler(String... names) {
+                for (var name : names) if (samplerNameSet.contains(name)) return false;
+                return true;
             }
 
             private String name(String... names) {
@@ -480,14 +459,14 @@ public class IrisVoxyRenderPipelineData {
 
             @Override
             public boolean addDynamicSampler(TextureType type, IntSupplier texture, ValueUpdateNotifier notifier, GlSampler sampler, String... names) {
-                if (!this.hasSampler(names)) return false;
+                if (this.doesNotHaveSampler(names)) return false;
                 samplerSet.add(new TextureWSampler(this.name(names), texture, sampler!=null?sampler.getId():-1));
                 return true;
             }
 
             @Override
             public void addExternalSampler(int texture, String... names) {
-                if (!this.hasSampler(names)) return;
+                if (this.doesNotHaveSampler(names)) return;
                 var name = this.name(names);
                 var ex = externalTextures.get(name);
                 if (ex != null) {

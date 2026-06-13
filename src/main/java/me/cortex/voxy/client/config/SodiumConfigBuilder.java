@@ -26,9 +26,7 @@ public class SodiumConfigBuilder {
             this.dependencies = dependencies;
             this.joinParent = joinParent;
         }
-        public Enabler(Predicate<ConfigState> tester, String[] dependencies) {
-            this(tester, dependencies, false);
-        }
+
         public Enabler(Predicate<ConfigState> tester, ResourceLocation[] dependencies) {
             this(tester, dependencies, false);
         }
@@ -36,25 +34,6 @@ public class SodiumConfigBuilder {
             this(tester, mapIds(dependencies), joinParent);
         }
 
-        /*
-        public static Enabler joinAnd(Enabler... enablers) {
-            Set<ResourceLocation> identifiers = new HashSet<>();
-            for (var e : enablers) {
-                for (var i : e.dependencies) {
-                    identifiers.add(i);
-                }
-            }
-            Predicate<ConfigState> tester = state->{
-                for (var test:enablers) {
-                    if (!test.tester.test(state)) {
-                        return false;
-                    }
-                }
-                return true;
-            };
-            var newEnabler = new Enabler(tester, identifiers.toArray(ResourceLocation[]::new));
-            return newEnabler;
-        }*/
         public Enabler joinAnd(Enabler parent) {
             Set<ResourceLocation> identifiers = new HashSet<>();
             identifiers.addAll(Arrays.asList(this.dependencies));
@@ -104,10 +83,6 @@ public class SodiumConfigBuilder {
 
         public TYPE setEnabler(Predicate<ConfigState> enabler, String... dependencies) {
             return this.setEnabler0(new Enabler(enabler, dependencies, false));
-        }
-
-        public TYPE setEnablerInherit(Predicate<ConfigState> enabler, String... dependencies) {
-            return this.setEnabler0(new Enabler(enabler, dependencies, true));
         }
 
         public TYPE setEnablerInherit(Predicate<ConfigState> enabler, ResourceLocation... dependencies) {
@@ -191,13 +166,6 @@ public class SodiumConfigBuilder {
         protected Supplier<TYPE> getter;
         protected Consumer<TYPE> setter;
         protected OptionImpact impact;
-        public Option(String id, Component name, Component tooltip, Supplier<TYPE> getter, Consumer<TYPE> setter) {
-            this.id = id;
-            this.name = name;
-            this.tooltip = tooltip;
-            this.getter = getter;
-            this.setter = setter;
-        }
 
         public Option(String id, Component name, Supplier<TYPE> getter, Consumer<TYPE> setter) {
             this.id = id;
@@ -209,11 +177,6 @@ public class SodiumConfigBuilder {
             } else {
                 this.tooltip = name;
             }
-        }
-
-        public OPTION setTooltipSupplier(Function<TYPE, Component> supplier) {
-            this.tooltipSupplier = supplier;
-            return (OPTION) this;
         }
 
         public OPTION setImpact(OptionImpact impact) {
@@ -286,11 +249,6 @@ public class SodiumConfigBuilder {
         protected String[] rangeDependencies;
         protected ControlValueFormatter formatter = v->Component.literal(Integer.toString(v));
 
-        public IntOption(String id, Component name, Component tooltip, Supplier<Integer> getter, Consumer<Integer> setter, Range range) {
-            super(id, name, tooltip, getter, setter);
-            this.rangeProvider = s->range;
-        }
-
         public IntOption(String id, Component name, Supplier<Integer> getter, Consumer<Integer> setter, Range range) {
             super(id, name, getter, setter);
             this.rangeProvider = s->range;
@@ -320,9 +278,6 @@ public class SodiumConfigBuilder {
     }
 
     public static class BoolOption extends Option<Boolean, BoolOption, BooleanOptionBuilder> {
-        public BoolOption(String id, Component name, Component tooltip, Supplier<Boolean> getter, Consumer<Boolean> setter) {
-            super(id, name, tooltip, getter, setter);
-        }
 
         public BoolOption(String id, Component name, Supplier<Boolean> getter, Consumer<Boolean> setter) {
             super(id, name, getter, setter);
@@ -336,21 +291,11 @@ public class SodiumConfigBuilder {
 
     public static class EnumOption<T extends Enum<T>> extends Option<T, EnumOption<T>, EnumOptionBuilder<T>> {
         private final Class<T> theEnum;
-        private Function<T, Component> nameProvider = value->Component.literal(value==null?"NULL":value.toString());
-
-        public EnumOption(String id, Class<T> theEnum, Component name, Component tooltip, Supplier<T> getter, Consumer<T> setter) {
-            super(id, name, tooltip, getter, setter);
-            this.theEnum = theEnum;
-        }
+        private final Function<T, Component> nameProvider = value->Component.literal(value==null?"NULL":value.toString());
 
         public EnumOption(String id, Class<T> theEnum, Component name, Supplier<T> getter, Consumer<T> setter) {
             super(id, name, getter, setter);
             this.theEnum = theEnum;
-        }
-
-        public EnumOption<T> setNameProvider(Function<T, Component> provider) {
-            this.nameProvider = provider;
-            return this;
         }
 
         @Override
@@ -428,7 +373,7 @@ public class SodiumConfigBuilder {
     }
 
 
-    private static final class BuildCtx {
+    protected static final class BuildCtx {
         public PostApplyOps postRunner = new PostApplyOps();
         public StorageEventHandler saveHandler;
     }

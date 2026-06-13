@@ -57,10 +57,6 @@ public class UploadStream {
         return this.uploadBuffer.addr() + addr;
     }
 
-    public long rawUpload(int size) {
-        return this.uploadBuffer.addr() + this.rawUploadAddress(size);
-    }
-
     public long rawUploadAddress(int size) {
         if (size < 0) {
             throw new IllegalStateException("Negative size");
