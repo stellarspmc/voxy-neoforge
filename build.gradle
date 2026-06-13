@@ -13,11 +13,8 @@ base {
     archivesName = project.archives_base_name
 }
 
-// 1. Configure the NeoForge workspace environment
 neoForge {
-    version = project.neoforge_version // E.g., "21.1.65" defined in gradle.properties
-
-    // NeoForge equivalent to Access Wideners
+    version = project.neoforge_version
     accessTransformers.from file('src/main/resources/META-INF/accesstransformer.cfg')
 
     runs {
@@ -125,8 +122,9 @@ dependencies {
     runtimeOnly('org.apache.commons:commons-pool2:2.12.0')
     runtimeOnly('org.lz4:lz4-java:1.8.0')
 
+    implementation('org.tukaani:xz:1.10')
     runtimeOnly('org.tukaani:xz:1.10')
-    compileOnly('org.tukaani:xz:1.10')
+    jarJar('org.tukaani:xz:1.10')
 
     if (!isInGHA) {
         runtimeOnly 'org.xerial:sqlite-jdbc:3.49.1.0'

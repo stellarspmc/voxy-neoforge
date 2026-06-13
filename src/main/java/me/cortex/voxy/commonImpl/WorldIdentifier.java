@@ -70,9 +70,7 @@ public class WorldIdentifier {
             return null;
         }
         var engine = instance.getOrCreate(this);
-        if (engine==null) {
-            throw new IllegalStateException("Engine null on creation");
-        }
+        if (engine == null) throw new IllegalStateException("Engine null on creation");
         return engine;
     }
 
@@ -158,7 +156,7 @@ public class WorldIdentifier {
 
     @Override
     public String toString() {
-        return "WorldIdentifier[" + this.key.location().toString() + ", " + this.biomeSeed + ", " + this.dimension.location().toString() + ']';
+        return "WorldIdentifier[" + this.key.location() + ", " + this.biomeSeed + ", " + this.dimension.location() + ']';
     }
 
     public static class GsonAdapter extends TypeAdapter<WorldIdentifier> {

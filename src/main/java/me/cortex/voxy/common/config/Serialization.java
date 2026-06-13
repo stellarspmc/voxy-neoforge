@@ -139,7 +139,7 @@ public class Serialization {
                         try {
                             nameMethod = original.getMethod("getConfigTypeName");
                             nameMethod.setAccessible(true);
-                        } catch (NoSuchMethodException e) {}
+                        } catch (NoSuchMethodException ignored) {}
                         if (nameMethod == null) {
                             Logger.error("WARNING: Config class " + clzName + " doesnt contain a getConfigTypeName and thus wont be serializable");
                             continue outer;
@@ -169,36 +169,41 @@ public class Serialization {
 
     private static List<String> collectAllClasses(String pack) {
         try {
-            InputStream stream = Serialization.class.getClassLoader()
-                    .getResourceAsStream(pack.replaceAll("[.]", "/"));
-            BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
-            return reader.lines().flatMap(inner -> {
-                if (inner.endsWith(".class")) {
-                    return Stream.of(pack + "." + inner.replace(".class", ""));
-                } else if (!inner.contains(".")) {
-                    return collectAllClasses(pack + "." + inner).stream();
-                } else {
-                    return Stream.of();
-                }
-            }).collect(Collectors.toList());
+            if (ModList.get() != null && ModList.get().isLoaded("voxy")) {
+                var modFile = ModList.get().getModFileById("voxy").getFile();
+                if (modFile != null && modFile.getSecureJar() != null)
+                    return collectAllClasses(modFile.getSecureJar().getRootPath(), pack);
+            }
+        } catch (Exception ignored) {}
+
+        try {
+            String pathStyle = pack.replaceAll("[.]", "/");
+            InputStream stream = Serialization.class.getClassLoader().getResourceAsStream(pathStyle);
+            if (stream == null) return List.of();
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
+                return reader.lines().flatMap(inner -> {
+                    if (inner.endsWith(".class"))
+                        return Stream.of(pack + "." + inner.replace(".class", ""));
+                    else if (!inner.contains(".")) return collectAllClasses(pack + "." + inner).stream();
+                    else return Stream.of();
+                }).collect(Collectors.toList());
+            }
         } catch (Exception e) {
             Logger.error("Failed to collect classes in package: " + pack, e);
             return List.of();
         }
     }
+
     private static List<String> collectAllClasses(Path base, String pack) {
-        if (!Files.exists(base.resolve(pack.replaceAll("[.]", "/")))) {
-            return List.of();
-        }
+        if (!Files.exists(base.resolve(pack.replaceAll("[.]", "/")))) return List.of();
         try {
             return Files.list(base.resolve(pack.replaceAll("[.]", "/"))).flatMap(inner -> {
-                if (inner.getFileName().toString().endsWith(".class")) {
+                if (inner.getFileName().toString().endsWith(".class"))
                     return Stream.of(pack + "." + inner.getFileName().toString().replace(".class", ""));
-                } else if (Files.isDirectory(inner)) {
+                else if (Files.isDirectory(inner))
                     return collectAllClasses(base, pack + "." + inner.getFileName()).stream();
-                } else {
-                    return Stream.of();
-                }
+                else return Stream.of();
             }).collect(Collectors.toList());
         } catch (IOException e) {
             throw new RuntimeException(e);
