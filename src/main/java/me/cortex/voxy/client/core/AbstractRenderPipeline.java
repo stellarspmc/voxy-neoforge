@@ -36,8 +36,6 @@ import static org.lwjgl.opengl.GL11C.glStencilOp;
 import static org.lwjgl.opengl.GL30C.GL_DEPTH24_STENCIL8;
 import static org.lwjgl.opengl.GL30C.GL_FRAMEBUFFER;
 import static org.lwjgl.opengl.GL30C.glBindFramebuffer;
-import static org.lwjgl.opengl.GL42.GL_LEQUAL;
-import static org.lwjgl.opengl.GL42.GL_NOTEQUAL;
 import static org.lwjgl.opengl.GL42.glDepthFunc;
 import static org.lwjgl.opengl.GL42.*;
 import static org.lwjgl.opengl.GL45.glClearNamedFramebufferfi;

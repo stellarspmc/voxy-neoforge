@@ -5,6 +5,7 @@
 /run/
 /out/
 /logs/
+/lib/
 
 bin/
 .classpath

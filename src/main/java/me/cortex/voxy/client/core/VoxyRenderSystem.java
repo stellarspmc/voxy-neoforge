@@ -7,11 +7,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import me.cortex.voxy.client.TimingStatistics;
 import me.cortex.voxy.client.VoxyClient;
 import me.cortex.voxy.client.config.VoxyConfig;
-import me.cortex.voxy.client.core.gl.Capabilities;
 import me.cortex.voxy.client.core.gl.GlBuffer;
 import me.cortex.voxy.client.core.gl.GlTexture;
 import me.cortex.voxy.client.core.model.ModelBakerySubsystem;
-import me.cortex.voxy.client.core.model.ModelStore;
 import me.cortex.voxy.client.core.rendering.ChunkBoundRenderer;
 import me.cortex.voxy.client.core.rendering.RenderDistanceTracker;
 import me.cortex.voxy.client.core.rendering.Viewport;
@@ -34,7 +32,6 @@ import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.thread.ServiceManager;
 import me.cortex.voxy.common.world.WorldEngine;
 import me.cortex.voxy.commonImpl.VoxyCommon;
-import net.caffeinemc.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import org.joml.Matrix4f;
@@ -154,8 +151,8 @@ public class VoxyRenderSystem {
             var sectionRenderer = backendFactory.create(this.pipeline, this.modelService.getStore(), this.geometryData);
             this.pipeline.setSectionRenderer(sectionRenderer);
             this.viewportSelector = new ViewportSelector<>(sectionRenderer::createViewport);
-
             {
+                assert Minecraft.getInstance().level != null;
                 int minSec = Minecraft.getInstance().level.getMinSection() >> 5;
                 int maxSec = (Minecraft.getInstance().level.getMaxSection() - 1) >> 5;
 
@@ -265,8 +262,7 @@ public class VoxyRenderSystem {
         }
 
 
-        int oldFB = GL11.glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING);
-        int boundFB = oldFB;
+        int boundFB = GL11.glGetInteger(GL_DRAW_FRAMEBUFFER_BINDING);
 
         int[] dims = new int[4];
         glGetIntegerv(GL_VIEWPORT, dims);
@@ -308,10 +304,10 @@ public class VoxyRenderSystem {
             //Tick upload stream (this is ok to do here as upload ticking is just memory management)
             UploadStream.INSTANCE.tick();
 
-            while (this.renderDistanceTracker.setCenterAndProcess(viewport.cameraX, viewport.cameraZ) && VoxyClient.isFrexActive());//While FF is active, run until everything is processed
+            while (this.renderDistanceTracker.setCenterAndProcess(viewport.cameraX, viewport.cameraZ));//While FF is active, run until everything is processed
             TimingStatistics.H.start();
             //Done here as is allows less gl state resetup
-            do { this.modelService.tick(900_000); } while (VoxyClient.isFrexActive() && !this.modelService.areQueuesEmpty());
+            do { this.modelService.tick(900_000); } while (!this.modelService.areQueuesEmpty());
             TimingStatistics.H.stop();
         }
         GPUTiming.INSTANCE.marker();
@@ -319,7 +315,7 @@ public class VoxyRenderSystem {
 
         GPUTiming.INSTANCE.tick();
 
-        glBindFramebuffer(GlConst.GL_FRAMEBUFFER, oldFB);
+        glBindFramebuffer(GlConst.GL_FRAMEBUFFER, boundFB);
         glViewport(dims[0], dims[1], dims[2], dims[3]);
 
         {//Reset state manager stuffs
@@ -468,9 +464,6 @@ public class VoxyRenderSystem {
     }
 
     private boolean frexStillHasWork() {
-        if (!VoxyClient.isFrexActive()) {
-            return false;
-        }
         //If frex is running we must tick everything to ensure correctness
         UploadStream.INSTANCE.tick();
         //Done here as is allows less gl state resetup

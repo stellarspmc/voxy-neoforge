@@ -4,12 +4,9 @@ import me.cortex.voxy.client.core.gl.Capabilities;
 import me.cortex.voxy.client.core.gl.GlBuffer;
 import me.cortex.voxy.client.core.gl.GlTexture;
 import me.cortex.voxy.client.core.model.ModelFactory;
-import me.cortex.voxy.client.core.rendering.section.geometry.BasicSectionGeometryData;
-import me.cortex.voxy.client.core.rendering.section.geometry.IGeometryData;
 import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.util.ThreadUtils;
 import me.cortex.voxy.common.util.TrackedObject;
-import me.cortex.voxy.commonImpl.VoxyCommon;
 
 import java.util.ArrayList;
 
@@ -34,18 +31,14 @@ public class RenderResourceReuse {
 
 
     public static GlTexture getOrCreateModelStoreTextureAtlas() {
-        GlTexture atlas = null;
-        if (!MODEL_TEXTURE_CACHE.isEmpty()) {
-            atlas = MODEL_TEXTURE_CACHE.removeFirst().zero();
-        } else {
-            atlas = new GlTexture().store(GL_RGBA8,
+        return (!MODEL_TEXTURE_CACHE.isEmpty()) ?
+                MODEL_TEXTURE_CACHE.removeFirst().zero() :
+                new GlTexture().store(GL_RGBA8,
                         Integer.numberOfTrailingZeros(ModelFactory.MODEL_TEXTURE_SIZE),
                         ModelFactory.MODEL_TEXTURE_SIZE*3*256,
-                        ModelFactory.MODEL_TEXTURE_SIZE*2*256)
-                    .name("ModelTextures");
-        }
-        return atlas;
+                        ModelFactory.MODEL_TEXTURE_SIZE*2*256).name("ModelTextures");
     }
+
     public static void giveBackModelStoreTextureAtlas(GlTexture texture) {
         MODEL_TEXTURE_CACHE.add(texture);
     }
@@ -58,18 +51,14 @@ public class RenderResourceReuse {
         } else {
             long capacity = getGeometryBufferSize();
             long driverMemory = -1;
-            if (Capabilities.INSTANCE.canQueryGpuMemory) {
-                driverMemory = Capabilities.INSTANCE.getFreeDedicatedGpuMemory();
-            }
+            if (Capabilities.INSTANCE.canQueryGpuMemory) driverMemory = Capabilities.INSTANCE.getFreeDedicatedGpuMemory();
 
             glGetError();//Clear any errors
             if (!(Capabilities.INSTANCE.isNvidia&& ThreadUtils.isWindows&&Capabilities.INSTANCE.sparseBuffer)) {//This hack makes it so it doesnt crash on renderdoc
                 buffer = new GlBuffer(capacity, false);//Only do this if we are not on nvidia
                 //TODO: FIXME: TEST, see if the issue is that we are trying to zero the entire buffer, try only zeroing increments
                 // or dont zero it at all
-            } else {
-                Logger.info("Running on nvidia, using workaround sparse buffer allocation");
-            }
+            } else Logger.info("Running on nvidia, using workaround sparse buffer allocation");
             int error = glGetError();
             if (error != GL_NO_ERROR || buffer == null) {
                 if ((buffer == null || error == GL_OUT_OF_MEMORY) && Capabilities.INSTANCE.sparseBuffer) {
@@ -84,14 +73,10 @@ public class RenderResourceReuse {
                         buffer.free();
                         throw new IllegalStateException("Unable to allocate geometry buffer using workaround, got gl error " + error);
                     }
-                } else {
-                    throw new IllegalStateException("Unable to allocate geometry buffer, got gl error " + error);
-                }
+                } else throw new IllegalStateException("Unable to allocate geometry buffer, got gl error " + error);
             }
             String extra = "";
-            if (driverMemory != -1) {
-                extra = ", driver stated " + (driverMemory/(1024*1024)) + "Mb of free memory";
-            }
+            if (driverMemory != -1) extra = ", driver stated " + (driverMemory/(1024*1024)) + "Mb of free memory";
             Logger.info("Allocated new geometry buffer: " + buffer.size() + ", isSparse: " + buffer.isSparse() + extra);
         }
         return buffer;
@@ -103,18 +88,15 @@ public class RenderResourceReuse {
 
     private static long getGeometryBufferSize() {
         long geometryCapacity = Math.min((1L<<(64-Long.numberOfLeadingZeros(Capabilities.INSTANCE.ssboMaxSize-1)))<<1, 1L<<32)-1024/*(1L<<32)-1024*/;
-        if (Capabilities.INSTANCE.isIntel) {
-            geometryCapacity = Math.max(geometryCapacity, 1L<<30);//intel moment, force min 1gb
-        }
-        if (Capabilities.INSTANCE.isNvidia && ThreadUtils.isLinux) {
-            geometryCapacity = Math.min(geometryCapacity, 2000L*1024L*1024L);//nvidia linux moment, force max 2gb heap
-        }
+        if (Capabilities.INSTANCE.isIntel) geometryCapacity = Math.max(geometryCapacity, 1L<<30);//intel moment, force min 1gb
+        if (Capabilities.INSTANCE.isNvidia && ThreadUtils.isLinux) geometryCapacity = Math.min(geometryCapacity, 2000L*1024L*1024L);//nvidia linux moment, force max 2gb heap
+
 
         geometryCapacity = Math.max(512*1024*1024, geometryCapacity);//min of 512 mb
 
         //Limit to available dedicated memory if possible
         if (Capabilities.INSTANCE.canQueryGpuMemory) {
-            //512mb less than avalible,
+            //512mb less than available,
             long limit = Capabilities.INSTANCE.getFreeDedicatedGpuMemory() - (long)(1.5*1024*1024*1024);//1.5gb vram buffer
             // Give a minimum of 512 mb requirement
             limit = Math.max(512*1024*1024, limit);

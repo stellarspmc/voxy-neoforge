@@ -87,7 +87,6 @@ public class RingTracker {
                 if (this.operations.addTo(pack(x, nz), (byte) -1)<0)//Unload point
                     throw new IllegalStateException("x: "+x+", z: "+nz+" state: "+this.operations.get(pack(x, nz)));
             }
-            this.centerZ += delta;
         } else {
             int sDelta = Integer.signum(delta);
             for (int i = 0; i <= this.radius * 2; i++) {
@@ -105,8 +104,8 @@ public class RingTracker {
                         throw new IllegalStateException();
                 }
             }
-            this.centerZ += delta;
         }
+        this.centerZ += delta;
     }
 
     private void moveX(int delta) {
@@ -124,7 +123,6 @@ public class RingTracker {
                 if (this.operations.addTo(pack(nx, z), (byte) -1)<0)//Unload point
                     throw new IllegalStateException();
             }
-            this.centerX += delta;
         } else {
             int sDelta = Integer.signum(delta);
             for (int i = 0; i <= this.radius * 2; i++) {
@@ -142,8 +140,8 @@ public class RingTracker {
                         throw new IllegalStateException();
                 }
             }
-            this.centerX += delta;
         }
+        this.centerX += delta;
     }
 
     public interface IUpdateConsumer {
@@ -201,12 +199,8 @@ public class RingTracker {
                 tracker.moveCenter(x, z);
             }
             tracker.fillRing(false);
-            tracker.process(64, (x,z)->{
-                Logger.info("Add:", x,",",z);
-            }, (x,z)->{
-                Logger.info("Remove:", x,",",z);
-            });
+            tracker.process(64, (x,z) -> Logger.info("Add:", x,",",z),
+                    (x, z) -> Logger.info("Remove:", x,",",z));
         }
-
     }
 }

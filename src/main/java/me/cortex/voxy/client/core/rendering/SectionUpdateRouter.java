@@ -43,7 +43,7 @@ public class SectionUpdateRouter implements ISectionWatcher {
         int idx = getSliceIndex(position);
         var set = this.slices[idx];
         var lock = this.locks[idx];
-        byte delta = 0;
+        byte delta;
         {
             long stamp = lock.readLock();
             byte current = set.getOrDefault(position, (byte) 0);
@@ -60,8 +60,7 @@ public class SectionUpdateRouter implements ISectionWatcher {
                     delta = (byte) (current&types);
                     current |= (byte) types;
                     delta ^= (byte) (current&types);
-                    if (delta != 0)
-                        set.put(position, current);
+                    if (delta != 0) set.put(position, current);
                 } else {
                     stamp = ws;
                     set.put(position, current);
@@ -88,9 +87,7 @@ public class SectionUpdateRouter implements ISectionWatcher {
         long stamp = lock.readLock();
 
         byte current = set.getOrDefault(position, (byte)0);
-        if (current == 0) {
-            throw new IllegalStateException("Section pos not in map " + WorldEngine.pprintPos(position));
-        }
+        if (current == 0) throw new IllegalStateException("Section pos not in map " + WorldEngine.pprintPos(position));
         boolean removed = false;
         if ((current&types) != 0) {//Was change
             long ws = lock.tryConvertToWriteLock(stamp);
@@ -99,21 +96,15 @@ public class SectionUpdateRouter implements ISectionWatcher {
                 stamp = lock.writeLock();
 
                 current = set.getOrDefault(position, (byte)0);
-                if (current == 0) {
-                    throw new IllegalStateException("Section pos not in map " + WorldEngine.pprintPos(position));
-                }
-            } else {
-                stamp = ws;
-            }
+                if (current == 0) throw new IllegalStateException("Section pos not in map " + WorldEngine.pprintPos(position));
+            } else stamp = ws;
 
             if ((current&types) != 0) {
                 current &= (byte) ~types;
                 if (current == 0) {
                     set.remove(position);
                     removed = true;
-                } else {
-                    set.put(position, current);
-                }
+                } else set.put(position, current);
             }
         }
         lock.unlock(stamp);
@@ -142,12 +133,9 @@ public class SectionUpdateRouter implements ISectionWatcher {
         lock.unlockRead(stamp);
 
         if (types!=0) {
-            if ((types&WorldEngine.UPDATE_TYPE_CHILD_EXISTENCE_BIT)!=0) {
-                this.childUpdateCallback.accept(section);
-            }
-            if ((types&UPDATE_TYPE_BLOCK_BIT)!=0) {
-                this.renderMeshGen.accept(section.key);
-            }
+            if ((types&WorldEngine.UPDATE_TYPE_CHILD_EXISTENCE_BIT)!=0) this.childUpdateCallback.accept(section);
+            if ((types&UPDATE_TYPE_BLOCK_BIT)!=0) this.renderMeshGen.accept(section.key);
+
         }
     }
 
@@ -159,9 +147,7 @@ public class SectionUpdateRouter implements ISectionWatcher {
         long stamp = lock.readLock();
         byte types = set.getOrDefault(position, (byte) 0);
         lock.unlockRead(stamp);
-        if ((types&UPDATE_TYPE_BLOCK_BIT)!=0) {
-            this.renderMeshGen.accept(position);
-        }
+        if ((types&UPDATE_TYPE_BLOCK_BIT)!=0) this.renderMeshGen.accept(position);
     }
 
     private static int getSliceIndex(long value) {

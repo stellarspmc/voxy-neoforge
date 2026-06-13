@@ -1,12 +1,12 @@
 {
   "required": true,
   "package": "me.cortex.voxy.commonImpl.mixin",
-  "compatibilityLevel": "JAVA_17",
+  "compatibilityLevel": "JAVA_21",
   "injectors": {
     "defaultRequire": 1
   },
   "mixins": [
-    "chunky.MixinFabricWorld",
+    "chunky.MixinNeoForgeWorld",
     "minecraft.MixinWorld"
   ],
   "overwrites": {

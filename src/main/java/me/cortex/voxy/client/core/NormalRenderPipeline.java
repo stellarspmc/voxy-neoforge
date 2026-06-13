@@ -52,7 +52,6 @@ public class NormalRenderPipeline extends AbstractRenderPipeline {
         this.finalBlit = new FullscreenBlit(properties, "voxy:post/blit_texture_depth_cutout.frag",
                 a->a.defineIf("USE_ENV_FOG", this.useEnvFog).define("EMIT_COLOUR"));
 
-
         this.ssao = SSAO.createSSAO(properties, VoxyConfig.CONFIG.getSSAOMode());
     }
 
@@ -70,7 +69,6 @@ public class NormalRenderPipeline extends AbstractRenderPipeline {
 
             this.fb.framebuffer.bind(GL_COLOR_ATTACHMENT0, this.colourTex).verify();
             this.fbSSAO.bind(this.fb.getDepthAttachmentType(), this.fb.getDepthTex()).bind(GL_COLOR_ATTACHMENT0, this.colourSSAOTex).verify();
-
 
             glTextureParameterf(this.colourTex.id, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTextureParameterf(this.colourTex.id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);

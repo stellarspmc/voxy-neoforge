@@ -1,0 +1,44 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "All-Rights-Reserved"
+
+[[mods]]
+modId = "voxy"
+version = "${version}"
+displayName = "Voxy"
+description = '''
+Far distance rendering mod utilising LoDs.
+'''
+authors = "Cortex"
+logoFile = "assets/voxy/icon.png"
+
+[modproperties.voxy]
+commit = "${commit}"
+buildtime = "${buildtime}"
+
+[[mixins]]
+config = "common.voxy.mixins.json"
+
+[[mixins]]
+config = "client.voxy.mixins.json"
+
+[[dependencies.voxy]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.voxy]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1]"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.voxy]]
+modId = "sodium"
+type = "required"
+versionRange = "[0.8.12-alpha.2,)"
+ordering = "NONE"
+side = "BOTH"

@@ -35,12 +35,6 @@ public record RenderProperties(boolean isZero2One, boolean isReverseZ, boolean u
         return this.isReverseZ?1.0f:0.0f;
     }
 
-
-
-
-
-
-
     private static boolean irisUseBlockAtlasUv() {
         var irisPipe = Iris.getPipelineManager().getPipelineNullable();
         if (irisPipe == null) {

@@ -17,7 +17,7 @@ import static org.lwjgl.opengl.GL33.glGetQueryObjecti64;
 public class GPUTiming {
     public static GPUTiming INSTANCE = new GPUTiming();
 
-    private final GlTimestampQuerySet<String> timingSet = new GlTimestampQuerySet(String.class);
+    private final GlTimestampQuerySet<String> timingSet = new GlTimestampQuerySet<>(String.class);
 
     private float[] timings = new float[0];
     private String[] lables = new String[0];
@@ -47,7 +47,7 @@ public class GPUTiming {
         StringBuilder str = new StringBuilder("GpuTime: [");
         for (int i = 0; i < this.timings.length; i++) {
             if (this.lables[i] != null) {
-                str.append(this.lables[i]+":"+String.format("%.2f", this.timings[i]));
+                str.append(this.lables[i]).append(":").append(String.format("%.2f", this.timings[i]));
             } else {
                 str.append(String.format("%.2f", this.timings[i]));
             }
@@ -106,7 +106,7 @@ public class GPUTiming {
             }
         }
         private final IntArrayFIFOQueue POOL = new IntArrayFIFOQueue();
-        private final ObjectArrayFIFOQueue<InflightRequest<T>> INFLIGHT = new ObjectArrayFIFOQueue();
+        private final ObjectArrayFIFOQueue<InflightRequest<T>> INFLIGHT = new ObjectArrayFIFOQueue<>();
 
         private final int[] queries = new int[64];
         private final T[] metadata;
@@ -135,7 +135,7 @@ public class GPUTiming {
                 var metadata = Arrays.copyOf(this.metadata, this.index);
                 Arrays.fill(this.metadata, null);
                 this.index = 0;
-                this.INFLIGHT.enqueue(new InflightRequest(queries, metadata, consumer));
+                this.INFLIGHT.enqueue(new InflightRequest<>(queries, metadata, consumer));
             }
         }
 

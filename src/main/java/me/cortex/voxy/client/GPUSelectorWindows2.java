@@ -1,6 +1,7 @@
 package me.cortex.voxy.client;
 
 import me.cortex.voxy.common.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.lwjgl.system.JNI;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
@@ -21,27 +22,27 @@ public class GPUSelectorWindows2 {
     private static final long D3DKMTCloseAdapter = apiGetFunctionAddressOptional(GDI32.getLibrary(), "D3DKMTCloseAdapter");
     private static final long D3DKMTQueryAdapterInfo = apiGetFunctionAddressOptional(GDI32.getLibrary(), "D3DKMTQueryAdapterInfo");
 
-    private static int setPCIProperties(int type, int vendor, int device, int subSys) {
+    private static void setPCIProperties(int type, int vendor, int device, int subSys) {
         try (var stack = MemoryStack.stackPush()) {
             var buff = stack.calloc(0x10).order(ByteOrder.nativeOrder());
             buff.putInt(0, vendor);
             buff.putInt(4, device);
             buff.putInt(8, subSys);
             buff.putInt(12, 0);
-            return setProperties(type, buff);
+            setProperties(type, buff);
         }
     }
 
-    private static int setProperties(int type, ByteBuffer payload) {
+    private static void setProperties(int type, ByteBuffer payload) {
         if (D3DKMTSetProperties == 0) {
-            return -1;
+            return;
         }
         try (var stack = MemoryStack.stackPush()) {
             var buff = stack.calloc(0x18).order(ByteOrder.nativeOrder());
             buff.putInt(0, type);
             buff.putInt(4, payload.remaining());
             buff.putLong(16, MemoryUtil.memAddress(payload));
-            return JNI.callPI(MemoryUtil.memAddress(buff), D3DKMTSetProperties);
+            JNI.callPI(MemoryUtil.memAddress(buff), D3DKMTSetProperties);
         }
     }
 
@@ -99,7 +100,7 @@ public class GPUSelectorWindows2 {
 
     private record AdapterInfo(String icdPath, int type, long luid, int vendor, int device, int subSystem) {
         @Override
-        public String toString() {
+        public @NotNull String toString() {
             String LUID = Integer.toHexString((int) ((luid>>>32)&0xFFFFFFFFL))+"-"+Integer.toHexString((int) (luid&0xFFFFFFFFL));
             return "{type=%s, luid=%s, vendor=%s, device=%s, subSys=%s, icd=\"%s\"}".formatted(Integer.toString(type),LUID, Integer.toHexString(vendor), Integer.toHexString(device), Integer.toHexString(subSystem), icdPath);
         }

@@ -1,7 +1,5 @@
 package me.cortex.voxy.client.config;
 
-import com.mojang.datafixers.types.Func;
-import me.cortex.voxy.common.util.Pair;
 import net.caffeinemc.mods.sodium.api.config.ConfigState;
 import net.caffeinemc.mods.sodium.api.config.StorageEventHandler;
 import net.caffeinemc.mods.sodium.api.config.option.*;
@@ -59,20 +57,11 @@ public class SodiumConfigBuilder {
         }*/
         public Enabler joinAnd(Enabler parent) {
             Set<ResourceLocation> identifiers = new HashSet<>();
-            for (var i : this.dependencies) {
-                identifiers.add(i);
-            }
-            for (var i : parent.dependencies) {
-                identifiers.add(i);
-            }
+            identifiers.addAll(Arrays.asList(this.dependencies));
+            identifiers.addAll(Arrays.asList(parent.dependencies));
             Predicate<ConfigState> tester = state->{
-                if (!this.tester.test(state)) {
-                    return false;
-                }
-                if (!parent.tester.test(state)) {
-                    return false;
-                }
-                return true;
+                if (!this.tester.test(state)) return false;
+                return parent.tester.test(state);
             };
             var newEnabler = new Enabler(tester, identifiers.toArray(ResourceLocation[]::new));
             newEnabler.baseEnabler = this;
@@ -273,7 +262,7 @@ public class SodiumConfigBuilder {
             option.setBinding(this.setter, this.getter);
             if (this.enabler != null) {
                 var pred = this.enabler.tester;
-                option.setEnabledProvider(s->pred.test(s), this.enabler.dependencies);
+                option.setEnabledProvider(pred::test, this.enabler.dependencies);
             }
 
             option.setStorageHandler(ctx.saveHandler);
@@ -308,7 +297,7 @@ public class SodiumConfigBuilder {
         }
 
         public IntOption setFormatter(IntFunction<Component> formatter) {
-            this.formatter = v->formatter.apply(v);
+            this.formatter = formatter::apply;
             return this;
         }
 
@@ -392,7 +381,7 @@ public class SodiumConfigBuilder {
 
     public static class PostApplyOps implements FlagHook {
         private record Hook(ResourceLocation name, Runnable runnable, Set<ResourceLocation> conflicts) {}
-        private Map<ResourceLocation, Hook> hooks = new LinkedHashMap<>();
+        private final Map<ResourceLocation, Hook> hooks = new LinkedHashMap<>();
 
         public PostApplyOps register(String name, Runnable postRunner, String... conflicts) {
             return this.register(ResourceLocation.parse(name), postRunner, mapIds(conflicts));
@@ -404,7 +393,7 @@ public class SodiumConfigBuilder {
         }
 
         protected PostApplyOps build() {
-            boolean changed = false;
+            boolean changed;
             do {
                 changed = false;
                 for (var hook : this.hooks.values()) {

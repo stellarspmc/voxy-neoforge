@@ -22,7 +22,6 @@ public class ShaderLoader {
         return src;
     }
 
-
     //Use our own loader
 
     private static final class ShaderLoadingParser {
@@ -47,14 +46,12 @@ public class ShaderLoader {
         private static List<String> toLines(String src) {
             return new BufferedReader(new StringReader(src)).lines().toList();
         }
+
         private static String loadShaderAsset(ResourceLocation id) {
             String path = String.format("/assets/%s/shaders/%s", id.getNamespace(), id.getPath());
             try (InputStream in = ShaderLoadingParser.class.getResourceAsStream(path)) {
-                if (in == null) {
-                    throw new RuntimeException("Shader not found: " + path);
-                } else {
-                    return IOUtils.toString(in, StandardCharsets.UTF_8);
-                }
+                if (in == null) throw new RuntimeException("Shader not found: " + path);
+                else return IOUtils.toString(in, StandardCharsets.UTF_8);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to read shader source for " + path, e);
             }

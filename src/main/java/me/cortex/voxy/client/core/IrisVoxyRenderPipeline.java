@@ -35,9 +35,7 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
     public IrisVoxyRenderPipeline(RenderProperties properties, IrisVoxyRenderPipelineData data, AsyncNodeManager nodeManager, NodeCleaner nodeCleaner, HierarchicalOcclusionTraverser traversal, BooleanSupplier frexSupplier) {
         super(properties, nodeManager, nodeCleaner, traversal, frexSupplier, data.shouldDeferTranslucency());
         this.data = data;
-        if (this.data.thePipeline != null) {
-            throw new IllegalStateException("Pipeline data already bound");
-        }
+        if (this.data.thePipeline != null) throw new IllegalStateException("Pipeline data already bound");
         this.data.thePipeline = this;
 
         //Bind the drawbuffers
@@ -60,17 +58,11 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
         this.fb.framebuffer.verify();
         this.fbTranslucent.framebuffer.verify();
 
-        if (data.getUniforms() != null) {
-            this.shaderUniforms = new GlBuffer(data.getUniforms().size());
-        } else {
-            this.shaderUniforms = null;
-        }
+        if (data.getUniforms() != null) this.shaderUniforms = new GlBuffer(data.getUniforms().size());
+        else this.shaderUniforms = null;
 
-        if (!this.data.skipShaderDepthHackFix) {
-            this.shaderDepthHackFixTransformBlit = new FullscreenBlit(properties, "voxy:post/fullscreen2.vert", "voxy:post/noop.frag");
-        } else {
-            this.shaderDepthHackFixTransformBlit = null;
-        }
+        if (!this.data.skipShaderDepthHackFix) this.shaderDepthHackFixTransformBlit = new FullscreenBlit(properties, "voxy:post/fullscreen2.vert", "voxy:post/noop.frag");
+        else this.shaderDepthHackFixTransformBlit = null;
 
         this.depthBlit = new FullscreenBlit(properties, "voxy:post/blit_texture_depth_cutout.frag");
     }
@@ -82,21 +74,14 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
 
     @Override
     public void free() {
-        if (this.data.thePipeline != this) {
-            throw new IllegalStateException();
-        }
+        if (this.data.thePipeline != this) throw new IllegalStateException();
         this.data.thePipeline = null;
 
         this.depthBlit.delete();
         this.fbTranslucent.free();
 
-        if (this.shaderDepthHackFixTransformBlit != null) {
-            this.shaderDepthHackFixTransformBlit.delete();
-        }
-
-        if (this.shaderUniforms != null) {
-            this.shaderUniforms.free();
-        }
+        if (this.shaderDepthHackFixTransformBlit != null) this.shaderDepthHackFixTransformBlit.delete();
+        if (this.shaderUniforms != null) this.shaderUniforms.free();
 
         super.free0();
     }
@@ -191,12 +176,9 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
 
     private void doBindings() {
         this.bindUniforms();
-        if (this.data.getSsboSet() != null) {
-            this.data.getSsboSet().bindingFunction().accept(10);
-        }
-        if (this.data.getImageSet() != null) {
-            this.data.getImageSet().bindingFunction().accept(6);
-        }
+        if (this.data.getSsboSet() != null) this.data.getSsboSet().bindingFunction().accept(10);
+
+        if (this.data.getImageSet() != null) this.data.getImageSet().bindingFunction().accept(6);
     }
     @Override
     public void setupAndBindOpaque(Viewport<?> viewport) {
@@ -208,9 +190,7 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
     public void setupAndBindTranslucent(Viewport<?> viewport) {
         this.fbTranslucent.bind();
         this.doBindings();
-        if (this.data.getBlender() != null) {
-            this.data.getBlender().run();
-        }
+        if (this.data.getBlender() != null) this.data.getBlender().run();
     }
 
     @Override
@@ -275,17 +255,15 @@ public class IrisVoxyRenderPipeline extends AbstractRenderPipeline {
 
     @Override
     public String taaFunction(int uboBindingPoint, String functionName) {
-        if (this.data.TAA == null) {
-            return null;
-        }
+        if (this.data.TAA == null) return null;
 
         var builder = new StringBuilder();
 
-        if (this.data.getUniforms() != null) {
-            builder.append("layout(binding = "+uboBindingPoint+", std140) uniform ShaderUniformBindings ")
+        if (this.data.getUniforms() != null)
+            builder.append("layout(binding = ").append(uboBindingPoint).append(", std140) uniform ShaderUniformBindings ")
                     .append(this.data.getUniforms().layout())
                     .append(";\n\n");
-        }
+
 
         builder.append("vec2 ").append(functionName).append("()\n");
         builder.append(this.data.TAA);

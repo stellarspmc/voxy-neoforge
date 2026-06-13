@@ -16,19 +16,13 @@ public class ExpandingObjectAllocationList<T> {
     public ExpandingObjectAllocationList(Int2ObjectFunction<T[]> arrayGenerator, int limit) {
         this.arrayGenerator = arrayGenerator;
         this.objects = this.arrayGenerator.apply(16);
-        if (limit != -1) {
-            this.bitSet = new HierarchicalBitSet(limit);
-        } else {
-            this.bitSet = new HierarchicalBitSet();
-        }
+        this.bitSet = (limit != -1) ? new HierarchicalBitSet(limit) : new HierarchicalBitSet();
     }
 
     public int put(T obj) {
         //Gets an unused id for some entry in objects, if its null fill it
         int id = this.bitSet.allocateNext();
-        if (id < 0) {
-            throw new IllegalStateException("Id over max request capacity");
-        }
+        if (id < 0) throw new IllegalStateException("Id over max request capacity");
         if (this.objects.length <= id) {
             //Resize and copy over the objects array
             int newLen = this.objects.length + (int)Math.ceil(this.objects.length*GROWTH_FACTOR);
@@ -41,17 +35,13 @@ public class ExpandingObjectAllocationList<T> {
     }
 
     public void release(int id) {
-        if (!this.bitSet.free(id)) {
-            throw new IllegalArgumentException("Index " + id + " was already released");
-        }
+        if (!this.bitSet.free(id)) throw new IllegalArgumentException("Index " + id + " was already released");
         this.objects[id] = null;
     }
 
     public T get(int index) {
         //Make the checking that index is allocated optional, as it might cause overhead due to multiple cacheline misses
-        if (!this.bitSet.isSet(index)) {
-            throw new IllegalArgumentException("Index " + index + " is not allocated");
-        }
+        if (!this.bitSet.isSet(index)) throw new IllegalArgumentException("Index " + index + " is not allocated");
         return this.objects[index];
     }
 

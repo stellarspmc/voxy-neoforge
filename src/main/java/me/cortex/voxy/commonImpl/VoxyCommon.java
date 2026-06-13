@@ -1,32 +1,29 @@
 package me.cortex.voxy.commonImpl;
 
-import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.config.Serialization;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.ModContainer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.loading.FMLEnvironment;
 
-public class VoxyCommon implements ModInitializer {
-    public static final String MOD_VERSION;
-    public static final boolean IS_DEDICATED_SERVER;
-    public static final boolean IS_IN_MINECRAFT;
+@Mod("voxy")
+public class VoxyCommon {
+    public static String MOD_VERSION = "";
+    public static boolean IS_DEDICATED_SERVER = false;
+    public static boolean IS_IN_MINECRAFT = false;
 
-    static {
-        ModContainer mod = (ModContainer) FabricLoader.getInstance().getModContainer("voxy").orElse(null);
-        if (mod == null) {
-            IS_IN_MINECRAFT = false;
-            Logger.error("Running voxy without minecraft");
-            MOD_VERSION = "<UNKNOWN>";
-            IS_DEDICATED_SERVER = false;
-        } else {
-            IS_IN_MINECRAFT = true;
-            var version = mod.getMetadata().getVersion().getFriendlyString();
-            var commit = mod.getMetadata().getCustomValue("commit").getAsString();
-            MOD_VERSION = version + "-" + commit.substring(0,7);
-            IS_DEDICATED_SERVER = FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
-            Serialization.init();
-        }
+    public VoxyCommon(ModContainer container, IEventBus modBus) {
+        IS_IN_MINECRAFT = true;
+
+        String version = container.getModInfo().getVersion().toString();
+        String commit = (String) container.getModInfo().getModProperties().getOrDefault("commit", "unknown000000");
+        MOD_VERSION = version + "-" + (commit.length() >= 7 ? commit.substring(0, 7) : commit);
+
+        IS_DEDICATED_SERVER = FMLEnvironment.dist == Dist.DEDICATED_SERVER;
+
+        Serialization.init();
+        // modBus.addListener(this::commonSetup);
     }
 
     //This is hardcoded like this because people do not understand what they are doing
@@ -35,16 +32,7 @@ public class VoxyCommon implements ModInitializer {
     }
 
     public static boolean isVerificationFlagOn(String name, boolean defaultOn) {
-        return System.getProperty("voxy."+name, defaultOn?"true":"false").equals("true");
-    }
-
-    public static void breakpoint() {
-        int breakpoint = 0;
-    }
-
-    @Override
-    public void onInitialize() {
-
+        return System.getProperty("voxy."+name, Boolean.toString(defaultOn)).equals("true");
     }
 
     public interface IInstanceFactory {VoxyInstance create();}
@@ -75,9 +63,7 @@ public class VoxyCommon implements ModInitializer {
             //Logger.info("Voxy factory");
             return;
         }
-        if (INSTANCE != null) {
-            throw new IllegalStateException("Cannot create multiple instances");
-        }
+        if (INSTANCE != null) throw new IllegalStateException("Cannot create multiple instances");
         INSTANCE = FACTORY.create();
     }
 
