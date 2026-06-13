@@ -6,6 +6,7 @@ plugins {
 
 version = project.mod_version
 group = project.maven_group
+project.ext.lwjglVersion = "3.3.3"
 
 base {
     archivesName = project.archives_base_name
@@ -91,20 +92,85 @@ processResources {
     }
 }
 
-project.ext.lwjglVersion = "3.3.3"
+configurations {
+    lwjglNativesRaw
+}
 
 dependencies {
-    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
-    compileOnly("org.lwjgl:lwjgl-lmdb")
-    compileOnly("org.lwjgl:lwjgl-zstd")
+    lwjglNativesRaw "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-windows"
+    lwjglNativesRaw "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-windows"
+    lwjglNativesRaw "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-linux"
+    lwjglNativesRaw "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-linux"
+}
 
-    compileOnly('redis.clients:jedis:5.1.0')
+def extractedNativesDir = layout.buildDirectory.dir("extracted-natives")
+
+tasks.register('extractLwjglNatives') {
+    description = 'Extracts native binaries from LWJGL native JARs for bundling'
+    group = 'build'
+
+    inputs.files(configurations.lwjglNativesRaw)
+    outputs.dir(extractedNativesDir)
+
+    doLast {
+        def outputDir = extractedNativesDir.get().asFile
+        outputDir.mkdirs()
+
+        configurations.lwjglNativesRaw.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def inputJar = artifact.file
+            logger.lifecycle("Extracting natives from ${inputJar.name}")
+
+            // Extract only native binaries (.dll, .so, .dylib)
+            copy {
+                from(zipTree(inputJar)) {
+                    include '**/*.dll'
+                    include '**/*.so'
+                    include '**/*.dylib'
+                    // Flatten directory structure - put all natives at root
+                    eachFile { fcp ->
+                        fcp.relativePath = new RelativePath(true, fcp.name)
+                    }
+                    includeEmptyDirs = false
+                }
+                into outputDir
+            }
+        }
+
+        // List extracted files
+        outputDir.listFiles()?.each { file ->
+            logger.lifecycle("  Extracted: ${file.name}")
+        }
+    }
+}
+
+tasks.named('jar') {
+    dependsOn 'extractLwjglNatives'
+
+    from(extractedNativesDir) {
+        into ''
+    }
+}
+
+dependencies {
+
+    jarJar(implementation("org.lwjgl:lwjgl-lmdb:$lwjglVersion"))
+    jarJar(implementation("org.lwjgl:lwjgl-zstd:$lwjglVersion"))
+
+    additionalRuntimeClasspath "org.lwjgl:lwjgl-lmdb:$lwjglVersion"
+    additionalRuntimeClasspath "org.lwjgl:lwjgl-zstd:$lwjglVersion"
+    // Natives also need to be on runtime classpath (LWJGL extracts from classpath)
+    additionalRuntimeClasspath "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-windows"
+    additionalRuntimeClasspath "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-windows"
+    additionalRuntimeClasspath "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-linux"
+    additionalRuntimeClasspath "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-linux"
+
+    //compileOnly('redis.clients:jedis:5.1.0')
 
     compileOnly('org.rocksdb:rocksdbjni:10.2.1')
     jarJar('org.rocksdb:rocksdbjni:10.2.1')
 
-    runtimeOnly('org.apache.commons:commons-pool2:2.12.0')
-    runtimeOnly('org.lz4:lz4-java:1.8.0')
+    //runtimeOnly('org.apache.commons:commons-pool2:2.12.0')
+    //runtimeOnly('org.lz4:lz4-java:1.8.0')
 
     compileOnly('org.tukaani:xz:1.10')
     jarJar('org.tukaani:xz:1.10')

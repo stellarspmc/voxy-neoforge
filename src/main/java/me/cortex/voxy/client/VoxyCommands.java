@@ -10,7 +10,6 @@ import me.cortex.voxy.client.core.IGetVoxyRenderSystem;
 import me.cortex.voxy.common.DebugUtils;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import me.cortex.voxy.commonImpl.WorldIdentifier;
-import me.cortex.voxy.commonImpl.importers.DHImporter;
 import me.cortex.voxy.commonImpl.importers.WorldImporter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
@@ -53,13 +52,6 @@ public class VoxyCommands {
                         .executes(VoxyCommands::importCurrentWorldIn))
                 .then(Commands.literal("cancel")
                         .executes(VoxyCommands::cancelImport));
-
-        if (DHImporter.HasRequiredLibraries) {
-            imports = imports
-                    .then(Commands.literal("distant_horizons")
-                            .then(Commands.argument("sqlDbPath", StringArgumentType.string())
-                                    .executes(VoxyCommands::importDistantHorizons)));
-        }
 
         var debug = Commands.literal("debug")
                 .then(Commands.literal("verifyTLNChildMask")
@@ -104,31 +96,6 @@ public class VoxyCommands {
         }
         DebugUtils.verifyAllTopLevelNodes(Objects.requireNonNull(WorldIdentifier.ofEngine(Minecraft.getInstance().level)), attemptRepair);
         return 0;
-    }
-
-
-    private static int importDistantHorizons(CommandContext<CommandSourceStack> ctx) {
-        var instance = (VoxyClientInstance)VoxyCommon.getInstance();
-        if (instance == null) {
-            ctx.getSource().sendFailure(Component.translatable("voxy.config.error.enable"));
-            return 1;
-        }
-        var dbFile = new File(ctx.getArgument("sqlDbPath", String.class));
-        if (!dbFile.exists()) {
-            return 1;
-        }
-        if (dbFile.isDirectory()) {
-            dbFile = dbFile.toPath().resolve("DistantHorizons.sqlite").toFile();
-            if (!dbFile.exists()) {
-                return 1;
-            }
-        }
-
-        File dbFile_ = dbFile;
-        var engine = WorldIdentifier.ofEngine(Minecraft.getInstance().level);
-        if (engine==null)return 1;
-        return instance.getImportManager().makeAndRunIfNone(engine, ()->
-                new DHImporter(dbFile_, engine, Objects.requireNonNull(Minecraft.getInstance().level), instance.getServiceManager(), instance.savingServiceRateLimiter)) ? 0 : 1;
     }
 
     private static boolean fileBasedImporter(File directory) {
