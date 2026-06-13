@@ -4,8 +4,6 @@ plugins {
     id 'net.neoforged.moddev' version '2.0.141'
 }
 
-def isInGHA = System.getenv("GITHUB_ACTIONS") == "true"
-
 version = project.mod_version
 group = project.maven_group
 
@@ -20,10 +18,13 @@ neoForge {
     runs {
         client {
             client()
-            systemProperty 'neoforge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.console.level', 'debug'
         }
         server {
             server()
+            systemProperty 'forge.logging.markers', 'REGISTRIES'
+            systemProperty 'forge.logging.console.level', 'debug'
             programArgument '--nogui'
         }
     }
@@ -36,8 +37,7 @@ neoForge {
 }
 
 configurations {
-    shade
-    implementation.extendsFrom shade
+    runtimeClasspath.extendsFrom runtimeOnly
 }
 
 repositories {
@@ -55,7 +55,6 @@ repositories {
     }
     maven { url = "https://maven.shedaniel.me/" }
     maven { url = "https://maven.terraformersmc.com/releases/" }
-
     maven { url = "https://maven.caffeinemc.net/releases" }
 }
 
@@ -95,87 +94,28 @@ processResources {
 project.ext.lwjglVersion = "3.3.3"
 
 dependencies {
-    implementation "org.lwjgl:lwjgl-lmdb:$lwjglVersion"
-    implementation "org.lwjgl:lwjgl-zstd:$lwjglVersion"
-
-    // dev
-    additionalRuntimeClasspath "org.lwjgl:lwjgl-lmdb:$lwjglVersion"
-    additionalRuntimeClasspath "org.lwjgl:lwjgl-zstd:$lwjglVersion"
-    additionalRuntimeClasspath "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-windows"
-    additionalRuntimeClasspath "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-windows"
-    additionalRuntimeClasspath "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-linux"
-    additionalRuntimeClasspath "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-linux"
-
-    // prod
-    jarJar "org.lwjgl:lwjgl-lmdb:$lwjglVersion"
-    jarJar "org.lwjgl:lwjgl-zstd:$lwjglVersion"
-    jarJar "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-windows"
-    jarJar "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-windows"
-    jarJar "org.lwjgl:lwjgl-lmdb:$lwjglVersion:natives-linux"
-    jarJar "org.lwjgl:lwjgl-zstd:$lwjglVersion:natives-linux"
+    implementation platform("org.lwjgl:lwjgl-bom:$lwjglVersion")
+    compileOnly("org.lwjgl:lwjgl-lmdb")
+    compileOnly("org.lwjgl:lwjgl-zstd")
 
     compileOnly('redis.clients:jedis:5.1.0')
 
-    implementation('org.rocksdb:rocksdbjni:10.2.1')
-    additionalRuntimeClasspath('org.rocksdb:rocksdbjni:10.2.1')
+    compileOnly('org.rocksdb:rocksdbjni:10.2.1')
+    jarJar('org.rocksdb:rocksdbjni:10.2.1')
 
     runtimeOnly('org.apache.commons:commons-pool2:2.12.0')
     runtimeOnly('org.lz4:lz4-java:1.8.0')
 
-    implementation('org.tukaani:xz:1.10')
-    runtimeOnly('org.tukaani:xz:1.10')
+    compileOnly('org.tukaani:xz:1.10')
     jarJar('org.tukaani:xz:1.10')
 
-    if (!isInGHA) {
-        runtimeOnly 'org.xerial:sqlite-jdbc:3.49.1.0'
-    }
-
     compileOnly(files("lib/sodium-neoforge-0.8.12-alpha.4+mc1.21.1.jar"))
+    compileOnly("maven.modrinth:sodium:mc1.21.1-0.8.12-alpha.4-neoforge")
     runtimeOnly("maven.modrinth:sodium:mc1.21.1-0.8.12-alpha.4-neoforge")
 
-    compileOnly("maven.modrinth:iris:1.8.12+1.21.1-neoforge")
     compileOnly("maven.modrinth:lithium:mc1.21.1-0.15.3-neoforge")
     compileOnly("maven.modrinth:sodium-extra:mc1.21.1-0.8.7+neoforge")
     compileOnly("maven.modrinth:chunky:1.4.23-neoforge")
-    //compileOnly("maven.modrinth:spark:1.10.124-neoforge")
-}
-
-tasks.register('makeExcludedRocksDB', Zip) {
-    archiveExtension.set("jar")
-    entryCompression = ZipEntryCompression.STORED
-    destinationDirectory.set temporaryDir
-
-    dependsOn configurations.shade
-
-    def files = configurations.shade.incoming.getArtifacts().getArtifactFiles().filter {
-        it.name.startsWith('rocksdb')
-    }
-
-    from { zipTree(files.first()) }
-    archiveFileName.set(providers.provider { files.first().name })
-
-    exclude {
-        def file = it.name
-        if (file.endsWith(".jnilib")) return true
-        if (!file.endsWith(".so")) return false
-        return ["osx", "linux32", "musl", "s390x", "riscv64", "ppc64le", "aarch64"].any(file::contains)
-    }
-}
-
-jar {
-    dependsOn makeExcludedRocksDB
-
-    from("LICENSE") {
-        rename { "${it}_${project.archives_base_name}" }
-    }
-
-    from {
-        configurations.shade.filter { !it.name.startsWith('rocksdb') }.collect {
-            it.isDirectory() ? it : zipTree(it)
-        }
-    }
-
-    from zipTree(makeExcludedRocksDB.archiveFile)
 }
 
 def targetJavaVersion = 21

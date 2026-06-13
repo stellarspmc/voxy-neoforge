@@ -4,7 +4,6 @@ import me.cortex.voxy.client.ClientSessionEvents;
 import me.cortex.voxy.client.config.SodiumConfigBuilder.*;
 import me.cortex.voxy.client.core.IGetVoxyRenderSystem;
 import me.cortex.voxy.client.core.SSAO;
-import me.cortex.voxy.client.core.util.IrisUtil;
 import me.cortex.voxy.common.util.cpu.CpuLayout;
 import me.cortex.voxy.commonImpl.VoxyCommon;
 import net.caffeinemc.mods.sodium.api.config.ConfigEntryPoint;
@@ -37,7 +36,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
             if (instance != null) {
                 instance.updateDedicatedThreads();
             }
-        }, "voxy:enabled").register("voxy:iris_reload", IrisUtil::reload),
+        }, "voxy:enabled").register("voxy:iris_reload", ()->{}),
                 new Page(Component.translatable("voxy.config.general"),
                         new Group(
                                 new BoolOption(
@@ -164,7 +163,7 @@ public class VoxyConfigMenu implements ConfigEntryPoint {
                                         .setImpact(OptionImpact.LOW)
                                         .setPostChangeFlags(RENDER_RELOAD)
                         )
-                        .setEnablerInherit(s->!IrisUtil.irisShadersEnabledInConfig(), ConfigState.UPDATE_ON_REBUILD)
+                        .setEnablerInherit(s->true, ConfigState.UPDATE_ON_REBUILD)
                 ).setEnablerAND("voxy:enabled", "voxy:rendering"));
 
     }

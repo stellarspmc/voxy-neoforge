@@ -4,7 +4,6 @@ import me.cortex.voxy.client.VoxyClientInstance;
 import me.cortex.voxy.client.config.VoxyConfig;
 import me.cortex.voxy.client.core.IGetVoxyRenderSystem;
 import me.cortex.voxy.client.core.VoxyRenderSystem;
-import me.cortex.voxy.client.core.util.IrisUtil;
 import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.world.WorldEngine;
 import me.cortex.voxy.commonImpl.VoxyCommon;
@@ -22,11 +21,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LevelRenderer.class)
 public abstract class MixinLevelRenderer implements IGetVoxyRenderSystem {
     @Shadow private @Nullable ClientLevel level;
-    @Unique private VoxyRenderSystem renderer;
+    @Unique private VoxyRenderSystem voxy$renderer;
 
     @Override
     public VoxyRenderSystem voxy$getRenderSystem() {
-        return this.renderer;
+        return this.voxy$renderer;
     }
 
     @Inject(method = "allChanged()V", at = @At("RETURN"), order = 900)//We want to inject before sodium
@@ -51,15 +50,15 @@ public abstract class MixinLevelRenderer implements IGetVoxyRenderSystem {
 
     @Override
     public void voxy$shutdownRenderer() {
-        if (this.renderer != null) {
-            this.renderer.shutdown();
-            this.renderer = null;
+        if (this.voxy$renderer != null) {
+            this.voxy$renderer.shutdown();
+            this.voxy$renderer = null;
         }
     }
 
     @Override
     public void voxy$createRenderer() {
-        if (this.renderer != null) throw new IllegalStateException("Cannot have multiple renderers");
+        if (this.voxy$renderer != null) throw new IllegalStateException("Cannot have multiple renderers");
         if (!VoxyConfig.CONFIG.enabled) {
             Logger.info("Not creating renderer due to disabled");
             return;
@@ -82,15 +81,7 @@ public abstract class MixinLevelRenderer implements IGetVoxyRenderSystem {
             Logger.error("Null world selected");
             return;
         }
-        try {
-            this.renderer = new VoxyRenderSystem(world, instance.getServiceManager());
-        } catch (RuntimeException e) {
-            if (IrisUtil.irisShaderPackEnabled()) {
-                IrisUtil.disableIrisShaders();
-            } else {
-                throw e;
-            }
-        }
+        this.voxy$renderer = new VoxyRenderSystem(world, instance.getServiceManager());
         instance.updateDedicatedThreads();
     }
 }

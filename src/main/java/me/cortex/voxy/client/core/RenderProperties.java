@@ -1,7 +1,6 @@
 package me.cortex.voxy.client.core;
 
 import me.cortex.voxy.client.core.gl.shader.Shader;
-import me.cortex.voxy.client.core.util.IrisUtil;
 
 import static org.lwjgl.opengl.GL11C.*;
 
@@ -28,20 +27,10 @@ public record RenderProperties(boolean isZero2One, boolean isReverseZ, boolean u
         return this.isReverseZ?1.0f:0.0f;
     }
 
-    private static boolean irisUseBlockAtlasUv() {
-        return false;
-    }
-
     public static RenderProperties getRenderProperties() {
-        RenderProperties properties = new RenderProperties(
+        return new RenderProperties(
                 true,
                 false,
                 false);
-
-        if (IrisUtil.IRIS_INSTALLED && IrisUtil.SHADER_SUPPORT) {
-            properties = new RenderProperties(properties.isZero2One(), properties.isReverseZ(), irisUseBlockAtlasUv());
-        }
-
-        return properties;
     }
 }

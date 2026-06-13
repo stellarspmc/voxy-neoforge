@@ -1,7 +1,5 @@
 package me.cortex.voxy.client.core.rendering;
 
-import me.cortex.voxy.client.core.util.IrisUtil;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -24,7 +22,7 @@ public class ViewportSelector <T extends Viewport<?>> {
 
     private static final Object IRIS_SHADOW_OBJECT = new Object();
     public T getViewport() {
-        return IrisUtil.irisShadowActive() ? getOrCreate() : defaultViewport;
+        return defaultViewport;
     }
 
     public void free() {

@@ -27,7 +27,6 @@ import me.cortex.voxy.client.core.rendering.util.DownloadStream;
 import me.cortex.voxy.client.core.rendering.util.PrintfDebugUtil;
 import me.cortex.voxy.client.core.rendering.util.UploadStream;
 import me.cortex.voxy.client.core.util.GPUTiming;
-import me.cortex.voxy.client.core.util.IrisUtil;
 import me.cortex.voxy.common.Logger;
 import me.cortex.voxy.common.thread.ServiceManager;
 import me.cortex.voxy.common.world.WorldEngine;
@@ -272,7 +271,7 @@ public class VoxyRenderSystem {
         this.pipeline.preSetup(viewport);
 
         TimingStatistics.E.start();
-        if ((!VoxyClient.disableSodiumChunkRender())&&!IrisUtil.irisShadowActive())
+        if ((!VoxyClient.disableSodiumChunkRender()))
             this.chunkBoundRenderer.render(viewport);
         else viewport.depthBoundingBuffer.clear(this.properties.inverseClearDepth());
         TimingStatistics.E.stop();
@@ -322,8 +321,6 @@ public class VoxyRenderSystem {
                 glBindSampler(i, 0);
             }
 
-            IrisUtil.clearIrisSamplers();//Thanks iris (sigh)
-
             //TODO: should/needto actually restore all of these, not just clear them
             //Clear all the bindings
             for (int i = 0; i < oldBufferBindings.length; i++) glBindBufferBase(GL_SHADER_STORAGE_BUFFER, i, oldBufferBindings[i]);
@@ -332,26 +329,6 @@ public class VoxyRenderSystem {
         }
 
         TimingStatistics.all.stop();
-
-    }
-
-
-
-    private void autoBalanceSubDivSize() {
-        //only increase quality while there are very few mesh queues, this stops,
-        // e.g. while flying and is rendering alot of low quality chunks
-        boolean canDecreaseSize = this.renderGen.getTaskCount() < 300;
-        int MIN_FPS = 55;
-        int MAX_FPS = 65;
-        float INCREASE_PER_SECOND = 60;
-        float DECREASE_PER_SECOND = 30;
-        //Auto fps targeting
-        if (Minecraft.getInstance().getFps() < MIN_FPS)
-            VoxyConfig.CONFIG.subDivisionSize = Math.min(VoxyConfig.CONFIG.subDivisionSize + INCREASE_PER_SECOND / Math.max(1f, Minecraft.getInstance().getFps()), 256);
-
-
-        if (MAX_FPS < Minecraft.getInstance().getFps() && canDecreaseSize)
-            VoxyConfig.CONFIG.subDivisionSize = Math.max(VoxyConfig.CONFIG.subDivisionSize - DECREASE_PER_SECOND / Math.max(1f, Minecraft.getInstance().getFps()), 28);
 
     }
 
@@ -398,9 +375,6 @@ public class VoxyRenderSystem {
     }
 
     public Viewport<?> getViewport() {
-        if (IrisUtil.irisShadowActive()) {
-            return null;
-        }
         return this.viewportSelector.getViewport();
     }
 
