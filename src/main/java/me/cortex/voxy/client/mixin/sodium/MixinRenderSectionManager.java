@@ -9,7 +9,6 @@ import me.cortex.voxy.commonImpl.VoxyCommon;
 import net.caffeinemc.mods.sodium.client.gl.device.CommandList;
 import net.caffeinemc.mods.sodium.client.render.chunk.RenderSection;
 import net.caffeinemc.mods.sodium.client.render.chunk.RenderSectionManager;
-import net.caffeinemc.mods.sodium.client.render.chunk.compile.executor.ChunkBuilder;
 import net.caffeinemc.mods.sodium.client.render.chunk.data.BuiltSectionInfo;
 import net.caffeinemc.mods.sodium.client.render.chunk.map.ChunkTrackerHolder;
 import net.caffeinemc.mods.sodium.client.render.chunk.translucent_sorting.SortBehavior;
@@ -34,8 +33,6 @@ public class MixinRenderSectionManager {
     private static final boolean BOBBY_INSTALLED = ModList.get().isLoaded("bobby");
 
     @Shadow @Final private ClientLevel level;
-
-    @Shadow @Final private ChunkBuilder builder;
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void voxy$resetChunkTracker(ClientLevel level, int renderDistance, SortBehavior sortBehavior, CommandList commandList, CallbackInfo ci) {
@@ -126,7 +123,7 @@ public class MixinRenderSectionManager {
                 // but only ingest if the chunkstatus is full and exists
                 var chunk = cccm.getChunk(x, z, ChunkStatus.FULL, false);
                 if (chunk != null) {
-                    var section = chunk.getSection(y - this.voxy$bottomSectionY);
+                    chunk.getSection(y - this.voxy$bottomSectionY);
                     var lp = this.level.getLightEngine();
 
                     var csp = SectionPos.of(x, y, z);

@@ -365,7 +365,7 @@ public class IrisVoxyRenderPipelineData {
             public LocationalUniformHolder addUniform(UniformUpdateFrequency uniformUpdateFrequency, Uniform uniform) {
                 //TODO: error/log the type of uniform that was added (and its location)
 
-                if (uniform instanceof BooleanUniform bu) {
+                if (uniform instanceof BooleanUniform) {
                     //TODO: need to assert the loc is from a actually valid location
                     patch.getUniformList();
                 }
