@@ -13,16 +13,22 @@ public class MipGen {
     static {
         if (MODEL_TEXTURE_SIZE>16) throw new IllegalStateException("TODO: THIS MUST BE UPDATED, IT CURRENTLY ASSUMES 16 OR SMALLER SIZE");
     }
-    private static final short[] SCRATCH = new short[MODEL_TEXTURE_SIZE*MODEL_TEXTURE_SIZE];
-    private static final ByteArrayFIFOQueue QUEUE = new ByteArrayFIFOQueue(MODEL_TEXTURE_SIZE*MODEL_TEXTURE_SIZE);
 
-    private static long getOffset(int bx, int by, int i) {
-        bx += i&(MODEL_TEXTURE_SIZE-1);
-        by += i/MODEL_TEXTURE_SIZE;
-        return bx+by*MODEL_TEXTURE_SIZE*3;
+    private record Cache(short[] SCRATCH, ByteArrayFIFOQueue QUEUE) {
+        private Cache() {
+            this(new short[MODEL_TEXTURE_SIZE*MODEL_TEXTURE_SIZE], new ByteArrayFIFOQueue(MODEL_TEXTURE_SIZE*MODEL_TEXTURE_SIZE));
+        }
     }
 
-    private static void solidify(long baseAddr, byte msk) {
+    private static final ThreadLocal<Cache> CACHE = ThreadLocal.withInitial(Cache::new);
+
+    private static long getOffset(int bx, int by, int i) {
+        bx += i & (MODEL_TEXTURE_SIZE - 1);
+        by += i / MODEL_TEXTURE_SIZE;
+        return bx+ (long) by * MODEL_TEXTURE_SIZE * 3;
+    }
+
+    private static void solidify(long baseAddr, byte msk, short[] SCRATCH, ByteArrayFIFOQueue QUEUE) {
         for (int idx = 0; idx < 6; idx++) {
             if (((msk>>idx)&1)==0) continue;
             int bx = (idx>>1)*MODEL_TEXTURE_SIZE;
@@ -68,6 +74,7 @@ public class MipGen {
         }
     }
 
+
     public static void putTextures(boolean darkened, ColourDepthTextureData[] textures, MemoryBuffer into) {
         //if (MODEL_TEXTURE_SIZE != 16) {throw new IllegalStateException("THIS METHOD MUST BE REDONE IF THIS CONST CHANGES");}
 
@@ -88,11 +95,12 @@ public class MipGen {
                 MemoryUtil.memPutInt(addr+o, t);
                 anyTransparent |= ((t&0xFF000000)==0);
             }
-            solidMsk |= (anyTransparent?1:0)<<i;
+            solidMsk = (byte) (solidMsk | (anyTransparent ? 1 : 0) << i);
         }
 
         if (!darkened) {
-            solidify(addr, solidMsk);
+            var cache = CACHE.get();
+            solidify(addr, solidMsk, cache.SCRATCH, cache.QUEUE);
         }
 
 
@@ -116,12 +124,5 @@ public class MipGen {
                 }
             }
         }
-
-        /*
-         */
-    }
-
-    public static void generateMipmaps(long[] textures, int size) {
-
     }
 }
