@@ -109,7 +109,7 @@ public class GlTexture extends TrackedObject {
             case GL_R32UI -> GL_RED_INTEGER;
             case GL_R32F -> GL_RED;
             case GL_DEPTH_COMPONENT24,GL_DEPTH_COMPONENT32F,GL_DEPTH_COMPONENT32 -> GL_DEPTH_COMPONENT;
-            case GL_DEPTH24_STENCIL8 -> GL_DEPTH_STENCIL;
+            case GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8 -> GL_DEPTH_STENCIL;
             default -> throw new IllegalStateException("Unknown format");
         };
     }

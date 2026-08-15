@@ -365,8 +365,9 @@ public class VoxyRenderSystem {
         //If frex is running we must tick everything to ensure correctness
         UploadStream.INSTANCE.tick();
         //Done here as it allows less gl state resetup
-        this.modelService.tick(100_000_000);
-        GL11.glFinish();
+        this.modelService.tick(1_000_000);
+        // optimization attempts
+        GL11.glFlush();
         return this.nodeManager.hasWork() || this.renderGen.getTaskCount()!=0 || !this.modelService.areQueuesEmpty();
     }
 

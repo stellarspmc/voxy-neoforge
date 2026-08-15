@@ -91,11 +91,13 @@ public class VoxyCommands {
             ctx.getSource().sendFailure(Component.translatable("voxy.config.error.enable"));
             return 1;
         }
-        if (Minecraft.getInstance().level == null) {
-            throw new IllegalStateException("How you even do this");
+        if (Minecraft.getInstance().level == null) throw new IllegalStateException("How you even do this");
+        var engine = WorldIdentifier.ofEngine(Minecraft.getInstance().level);
+        if (engine != null) {
+            DebugUtils.verifyAllTopLevelNodes(engine, attemptRepair);
+            return 0;
         }
-        DebugUtils.verifyAllTopLevelNodes(Objects.requireNonNull(WorldIdentifier.ofEngine(Minecraft.getInstance().level)), attemptRepair);
-        return 0;
+        return 1;
     }
 
     private static boolean fileBasedImporter(File directory) {

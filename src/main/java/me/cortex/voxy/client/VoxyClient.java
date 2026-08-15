@@ -54,9 +54,7 @@ public class VoxyClient {
 
     public static void onRegisterClientCommands(RegisterClientCommandsEvent event) {
         // event.getBuildContext() is available here if VoxyCommands.register needs registry context
-        if (VoxyCommon.isAvailable()) {
-            event.getDispatcher().register(VoxyCommands.register());
-        }
+        if (VoxyCommon.isAvailable()) event.getDispatcher().register(VoxyCommands.register());
     }
 
     public static int getOcclusionDebugState() {

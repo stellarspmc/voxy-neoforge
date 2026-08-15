@@ -13,37 +13,27 @@ public class GlDebug {
     }
 
     public static GlBuffer name(String name, GlBuffer buffer) {
-        if (GL_DEBUG) {
-            glObjectLabel(GL_BUFFER, buffer.id, name);
-        }
+        if (GL_DEBUG) glObjectLabel(GL_BUFFER, buffer.id, name);
         return buffer;
     }
 
     public static <T extends Shader> T name(String name, T shader) {
-        if (GL_DEBUG) {
-            glObjectLabel(GL_PROGRAM, shader.id(), name);
-        }
+        if (GL_DEBUG) glObjectLabel(GL_PROGRAM, shader.id(), name);
         return shader;
     }
 
     public static GlFramebuffer name(String name, GlFramebuffer framebuffer) {
-        if (GL_DEBUG) {
-            glObjectLabel(GL_FRAMEBUFFER, framebuffer.id, name);
-        }
+        if (GL_DEBUG) glObjectLabel(GL_FRAMEBUFFER, framebuffer.id, name);
         return framebuffer;
     }
 
     public static GlTexture name(String name, GlTexture texture) {
-        if (GL_DEBUG) {
-            glObjectLabel(GL_TEXTURE, texture.id, name);
-        }
+        if (GL_DEBUG) glObjectLabel(GL_TEXTURE, texture.id, name);
         return texture;
     }
 
     public static GlPersistentMappedBuffer name(String name, GlPersistentMappedBuffer buffer) {
-        if (GL_DEBUG) {
-            glObjectLabel(GL_BUFFER, buffer.id, name);
-        }
+        if (GL_DEBUG) glObjectLabel(GL_BUFFER, buffer.id, name);
         return buffer;
     }
 }
