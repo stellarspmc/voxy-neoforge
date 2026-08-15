@@ -1,7 +1,7 @@
 plugins {
     id 'java'
     id 'maven-publish'
-    id 'net.neoforged.moddev' version '2.0.141'
+    id 'net.neoforged.moddev' version '2.0.144'
 }
 
 version = project.mod_version
@@ -175,12 +175,12 @@ dependencies {
     compileOnly('org.tukaani:xz:1.10')
     jarJar('org.tukaani:xz:1.10')
 
-    compileOnly(files("lib/sodium-neoforge-0.8.12-alpha.4+mc1.21.1.jar"))
-    compileOnly("maven.modrinth:sodium:mc1.21.1-0.8.12-alpha.4-neoforge")
-    runtimeOnly("maven.modrinth:sodium:mc1.21.1-0.8.12-alpha.4-neoforge")
+    compileOnly(files("lib/sodium-neoforge-0.8.13-beta.2+mc1.21.1.jar"))
+    compileOnly("maven.modrinth:sodium:mc1.21.1-0.8.13-beta.2-neoforge")
+    runtimeOnly("maven.modrinth:sodium:mc1.21.1-0.8.13-beta.2-neoforge")
 
     compileOnly("maven.modrinth:lithium:mc1.21.1-0.15.3-neoforge")
-    compileOnly("maven.modrinth:sodium-extra:mc1.21.1-0.8.7+neoforge")
+    compileOnly("maven.modrinth:sodium-extra:mc1.21.1-0.9.3+neoforge")
     compileOnly("maven.modrinth:chunky:1.4.23-neoforge")
 }
 
